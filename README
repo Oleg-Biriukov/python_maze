@@ -1,0 +1,199 @@
+Here is the English translation of your text:
+
+---
+
+Alright. Here is a clear, defensible plan for Teammate A, without code, focused specifically on the algorithmic part, so that during the defense it is clear what exactly they did and what they were responsible for.
+
+📘 Work Plan — Teammate A
+Role: Core Maze Generation & Structure
+
+---
+
+### 1. Project Requirements Analysis
+
+Break down what a maze is in terms of the project:
+
+* grid of cells
+* 4 possible walls (N / E / S / W)
+
+Define invariants:
+
+* walls between neighboring cells are always consistent
+* no out-of-bounds access outside the maze
+
+Understand the difference between:
+
+* perfect maze
+* non-perfect maze
+
+---
+
+### 2. Designing the Internal Maze Structure
+
+Describe the logical model:
+
+* what a cell is
+* how walls are stored
+* how cells are connected to each other
+
+Define which data must be accessible externally:
+
+* dimensions
+* access to walls
+* ability to iterate over cells
+
+Ensure independence from:
+
+* output file format
+* visualization method
+
+---
+
+### 3. Choosing and Justifying the Generation Algorithm
+
+Select a maze generation algorithm:
+
+* recursive backtracker / Prim / other
+
+Explain:
+
+* why this specific algorithm
+* how it guarantees maze connectivity
+
+Consider:
+
+* how randomness is ensured
+* how seed works for reproducibility
+
+---
+
+### 4. Implementing Maze Generation
+
+Build the generation process:
+
+* starting cell
+* rules for moving between cells
+* opening walls
+
+Ensure:
+
+* no isolated cells
+* correct boundary handling
+
+Take into account requirements:
+
+* PERFECT = True / False
+
+---
+
+### 5. Wall Consistency Control
+
+Ensure the rule:
+
+* if there is no wall between two cells, it is reflected on both sides
+
+Design a verification mechanism:
+
+* after generation
+* or during generation
+
+Prevent inconsistent data states
+
+---
+
+### 6. Limiting Open Areas
+
+Analyze what counts as a “large open area”
+
+Develop an approach for:
+
+* detecting fully open 3×3 areas
+* preventing their creation
+
+Ensure corridors:
+
+* do not exceed the allowed width
+
+Integrate this either into generation or as a post-check
+
+---
+
+### 7. Preparing for “42” Pattern Insertion
+
+Ensure the ability to:
+
+* fully close selected cells
+
+Without breaking:
+
+* the maze structure
+* other cells
+
+Leave room for:
+
+* further maze re-validation
+
+---
+
+### 8. Generator API
+
+Clearly define:
+
+* how the generator is created
+* what parameters it accepts
+
+Describe:
+
+* how generation is triggered
+* how the maze structure is retrieved
+
+Provide a stable contract for Teammate B
+
+---
+
+### 9. Error Handling and Edge Cases
+
+Anticipate:
+
+* a maze that is too small
+* inability to satisfy all constraints
+
+Ensure:
+
+* clear error messages
+* no crashes
+
+---
+
+### 10. Documentation and Defense Preparation
+
+Explain:
+
+* how the algorithm works step by step
+* what guarantees it provides
+
+Be ready to answer:
+
+* why the maze is always valid
+* what happens when parameters change
+
+Describe your role in the README:
+
+> “Responsible for maze generation and structure”
+
+---
+
+✅ Definition of Done (for Teammate A)
+
+* The generator creates a valid maze
+* All subject constraints are respected
+* The maze is independent from UI and output
+* Teammate A can explain every step of the algorithm
+
+---
+
+If you’d like, I can next:
+
+✍️ create a similar plan for Teammate B
+🧠 help formulate answers to common defense questions
+🗺️ propose a 2–3 week timeline
