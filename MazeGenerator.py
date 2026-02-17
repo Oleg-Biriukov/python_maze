@@ -47,8 +47,8 @@ class MazeGenerator(BaseModel):
         matrix[:, -1] = Cell(tp=TypeCell.BORDER, visited=True)
         return matrix
 
-    def generate_maze(self):
-        def 
+    # def generate_maze(self):
+    #     def 
 
 
 def main():
