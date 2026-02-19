@@ -1,94 +1,9 @@
 from enum import Enum
-from typing import Any
+from typing import Literal
 from pydantic import BaseModel, Field, model_validator, PrivateAttr
 import numpy as np
 import random as r
 from mlx import Mlx
-
-
-txtr = {
-    0b0000: [
-        "   ",
-        "   ",
-        "   ",
-    ],
-    0b0001: [  # W
-        "   ",
-        "┃  ",
-        "   ",
-    ],
-    0b0010: [  # S
-        "   ",
-        "   ",
-        "━━━",
-    ],
-    0b0011: [  # S + W
-        "   ",
-        "┃  ",
-        "━━━",
-    ],
-    0b0100: [  # E
-        "   ",
-        "  ┃",
-        "   ",
-    ],
-    0b0101: [  # E + W
-        "   ",
-        "┃ ┃",
-        "   ",
-    ],
-    0b0110: [  # E + S
-        "   ",
-        "  ┃",
-        "━━━",
-    ],
-    0b0111: [  # E + S + W
-        "   ",
-        "┃ ┃",
-        "━━━",
-    ],
-    0b1000: [  # N
-        "━━━",
-        "   ",
-        "   ",
-    ],
-    0b1001: [  # N + W
-        "━━━",
-        "┃  ",
-        "   ",
-    ],
-    0b1010: [  # N + S
-        "━━━",
-        "   ",
-        "━━━",
-    ],
-    0b1011: [  # N + S + W
-        "━━━",
-        "┃  ",
-        "━━━",
-    ],
-    0b1100: [  # N + E
-        "━━━",
-        "  ┃",
-        "   ",
-    ],
-    0b1101: [  # N + E + W
-        "━━━",
-        "┃ ┃",
-        "   ",
-    ],
-    0b1110: [  # N + E + S
-        "━━━",
-        "  ┃",
-        "━━━",
-    ],
-    0b1111: [  # N + E + S + W
-        "━━━",
-        "┃ ┃",
-        "━━━",
-    ],
-}
-
 
 class TypeCell(Enum):
     BORDER = 'BORDER'
@@ -97,13 +12,32 @@ class TypeCell(Enum):
     TEXT = 'TEXT'
 
 
+class WallsType(Enum):
+    OPEN = 0b0000
+    W = 0b0001
+    S = 0b0010
+    N = 0b1000
+    E = 0b0100
+    S_W = 0b0011
+    E_W = 0b0101
+    E_S = 0b0110
+    N_W = 0b1001
+    N_S = 0b1010
+    N_E = 0b1100
+    E_S_W = 0b0111
+    N_S_W = 0b1011
+    N_E_W = 0b1101
+    N_E_S = 0b1110
+    CLOSED = 0b1111
+
+
 class Colors(Enum):
     pass
 
 
 class Cell(BaseModel):
     tp: TypeCell
-    walls: list = txtr[0b1111]
+    walls: WallsType = WallsType.CLOSED
     visited: bool = False
     color: Colors = None
 
@@ -129,16 +63,16 @@ class MazeGenerator(BaseModel):
 
     def model_post_init(self, __content):
         self._maze = np.full((self.width, self.height), Cell(tp=TypeCell.CELL))
-        # self._maze[0, :] = Cell(tp=TypeCell.BORDER, visited=True,
-        #                         walls=txtr[0b0010])
-        # self._maze[-1, :] = Cell(tp=TypeCell.BORDER, visited=True,
-        #                          walls=txtr[0b1000])
-        # self._maze[:, 0] = Cell(tp=TypeCell.BORDER, visited=True,
-        #                         walls=txtr[0b0001])
-        # self._maze[:, -1] = Cell(tp=TypeCell.BORDER, visited=True,
-        #                          walls=txtr[0b0001])
-        # self._maze[0][0].walls = txtr[0b0110]
-        # self._maze[self.height-1][0].walls = txtr[0b0011]
+        self._maze[0, :] = Cell(tp=TypeCell.BORDER, visited=True,
+                                walls=WallsType.N)
+        self._maze[-1, :] = Cell(tp=TypeCell.BORDER, visited=True,
+                                 walls=WallsType.S)
+        self._maze[:, 0] = Cell(tp=TypeCell.BORDER, visited=True,
+                                walls=WallsType.W)
+        self._maze[:, -1] = Cell(tp=TypeCell.BORDER, visited=True,
+                                 walls=WallsType.E)
+        self._maze[0][0].walls = txtr[0b0110]
+        self._maze[self.height-1][0].walls = txtr[0b0011]
 
     def __str__(self):
         result = []
@@ -156,7 +90,7 @@ class MazeGenerator(BaseModel):
         def track_to(x, y):
             self._maze[x][y].visited = True
             self._maze[x][y].tp = TypeCell.WALL
-            self._maze[x][y].walls = r.choice(txtr)
+            self._maze[x][y].walls = r.choice()
             if self._maze[x+1][y].visited is False:
                 return track_to(x+1, y)
             if self._maze[x-1][y].visited is False:
