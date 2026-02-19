@@ -3,25 +3,90 @@ from typing import Any
 from pydantic import BaseModel, Field, model_validator, PrivateAttr
 import numpy as np
 import random as r
+from mlx import Mlx
 
 
 txtr = {
-    0b0000: ' ',   # no walls
-    0b0001: '╹',   # W
-    0b0010: '╺',   # S
-    0b0011: '┗',   # S + W
-    0b0100: '╻',   # E
-    0b0101: '┃',   # E + W
-    0b0110: '┏',   # E + S
-    0b0111: '┣',   # E + S + W
-    0b1000: '╸',   # N
-    0b1001: '┛',   # N + W
-    0b1010: '┓',   # N + S
-    0b1011: '┫',   # N + S + W
-    0b1100: '┳',   # N + E
-    0b1101: '┻',   # N + E + W
-    0b1110: '╋',   # N + E + S
-    0b1111: '╬',   # all walls
+    0b0000: [
+        "   ",
+        "   ",
+        "   ",
+    ],
+    0b0001: [  # W
+        "   ",
+        "┃  ",
+        "   ",
+    ],
+    0b0010: [  # S
+        "   ",
+        "   ",
+        "━━━",
+    ],
+    0b0011: [  # S + W
+        "   ",
+        "┃  ",
+        "━━━",
+    ],
+    0b0100: [  # E
+        "   ",
+        "  ┃",
+        "   ",
+    ],
+    0b0101: [  # E + W
+        "   ",
+        "┃ ┃",
+        "   ",
+    ],
+    0b0110: [  # E + S
+        "   ",
+        "  ┃",
+        "━━━",
+    ],
+    0b0111: [  # E + S + W
+        "   ",
+        "┃ ┃",
+        "━━━",
+    ],
+    0b1000: [  # N
+        "━━━",
+        "   ",
+        "   ",
+    ],
+    0b1001: [  # N + W
+        "━━━",
+        "┃  ",
+        "   ",
+    ],
+    0b1010: [  # N + S
+        "━━━",
+        "   ",
+        "━━━",
+    ],
+    0b1011: [  # N + S + W
+        "━━━",
+        "┃  ",
+        "━━━",
+    ],
+    0b1100: [  # N + E
+        "━━━",
+        "  ┃",
+        "   ",
+    ],
+    0b1101: [  # N + E + W
+        "━━━",
+        "┃ ┃",
+        "   ",
+    ],
+    0b1110: [  # N + E + S
+        "━━━",
+        "  ┃",
+        "━━━",
+    ],
+    0b1111: [  # N + E + S + W
+        "━━━",
+        "┃ ┃",
+        "━━━",
+    ],
 }
 
 
@@ -38,7 +103,7 @@ class Colors(Enum):
 
 class Cell(BaseModel):
     tp: TypeCell
-    walls: Any = txtr[0b1111]
+    walls: list = txtr[0b1111]
     visited: bool = False
     color: Colors = None
 
@@ -64,23 +129,25 @@ class MazeGenerator(BaseModel):
 
     def model_post_init(self, __content):
         self._maze = np.full((self.width, self.height), Cell(tp=TypeCell.CELL))
-        self._maze[0, :] = Cell(tp=TypeCell.BORDER, visited=True,
-                                walls=txtr[0b0010])
-        self._maze[-1, :] = Cell(tp=TypeCell.BORDER, visited=True,
-                                 walls=txtr[0b1000])
-        self._maze[:, 0] = Cell(tp=TypeCell.BORDER, visited=True,
-                                walls=txtr[0b0001])
-        self._maze[:, -1] = Cell(tp=TypeCell.BORDER, visited=True,
-                                 walls=txtr[0b0001])
+        # self._maze[0, :] = Cell(tp=TypeCell.BORDER, visited=True,
+        #                         walls=txtr[0b0010])
+        # self._maze[-1, :] = Cell(tp=TypeCell.BORDER, visited=True,
+        #                          walls=txtr[0b1000])
+        # self._maze[:, 0] = Cell(tp=TypeCell.BORDER, visited=True,
+        #                         walls=txtr[0b0001])
+        # self._maze[:, -1] = Cell(tp=TypeCell.BORDER, visited=True,
+        #                          walls=txtr[0b0001])
         # self._maze[0][0].walls = txtr[0b0110]
         # self._maze[self.height-1][0].walls = txtr[0b0011]
 
     def __str__(self):
         result = []
-        for x in self._maze:
-            for y in x:
-                result.append(y.walls)
-            result.append('\n')
+        for y in range(0, self.height):
+            for x in range(0, self.width):
+                for s_wall in range(0, len(self._maze[y][x].walls)):
+                    for time in range(0, self.width):
+                        result.append(self._maze[y][time].walls[s_wall])
+                    result.append('\n')
         return ''.join(result)
 
     def generate_maze(self):
@@ -102,14 +169,18 @@ class MazeGenerator(BaseModel):
 
 
 def main():
-    maze = MazeGenerator(width=30,
-                         height=30,
+    maze = MazeGenerator(width=5,
+                         height=5,
                          entry_x=0,
                          entry_y=0,
-                         exit_x=19,
-                         exit_y=19)
-    maze.generate_maze()
-    print(maze)
+                         exit_x=2,
+                         exit_y=2)
+    # maze.generate_maze()
+    mlx_ptr = m.mlx_init()
+    # print(maze)
+    # for wall in txtr[0b1111]:
+    #     print(wall)
+    m.mlx_loop(mlx_ptr)
 
 
 if __name__ == '__main__':
