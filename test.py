@@ -20,6 +20,9 @@ class Cell:
         self.h = 0
         self.parent = None
         self.is_path = False
+        self.is_end = False
+        self.is_start = False
+
 
     def __lt__(self, other):
         return self.f < other.f
@@ -86,7 +89,15 @@ def render_maze(matrix, width, height):
             top_line += "━━━" if cell.walls["top"] else "   "
 
             mid_line += "┃" if cell.walls["left"] else " "
-            mid_line += " # " if cell.is_path else "   "
+            if cell.is_start:
+                mid_line += " S "
+            elif cell.is_end:
+                mid_line += " F "
+            elif cell.is_path:
+                mid_line += " # "
+            else:
+                mid_line += "   "
+
 
         top_line += get_corner(matrix, y, width, width, height)
         mid_line += "┃" if matrix[y][width - 1].walls["right"] else " "
@@ -125,6 +136,7 @@ def solve_maze(matrix, width, height, start_x, start_y, end_x, end_y):
         ("bottom", 0, 1),
         ("left", -1, 0)
     ]
+
 
     start_cell = matrix[start_y][start_x]
 
@@ -191,9 +203,11 @@ def main():
 
 
     start_x, start_y = 0,0
-    end_x, end_y = 19,25
+    end_x, end_y = 25,25
 
     matrix[start_y][start_x].g = 0
+    matrix[start_y][start_x].is_start = True
+    matrix[end_y][end_x].is_end = True
 
 
     for path in solve_maze(matrix, width, height, start_x, start_y, end_x, end_y):
