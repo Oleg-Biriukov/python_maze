@@ -1,21 +1,19 @@
 from enum import Enum
-from typing import Literal
+from typing import List
 from pydantic import BaseModel, Field, model_validator, PrivateAttr
 import numpy as np
 import random as r
 from mlx import Mlx
-from test import render_maze
+# from test import render_maze, seed_to_objects_matrix_converter
 
 
 class TypeCell(Enum):
     BORDER = 'BORDER'
-    CELL = 'CELL'
     WALL = 'WALL'
     TEXT = 'TEXT'
 
 
 class WallsType(Enum):
-    OPEN = 0b0000
     W = 0b0001
     S = 0b0010
     N = 0b1000
@@ -30,7 +28,8 @@ class WallsType(Enum):
     N_S_W = 0b1011
     N_E_W = 0b1101
     N_E_S = 0b1110
-    CLOSED = 0b1111
+    OPEN = 0b0000
+    CLOSE = 0b1111
 
 
 class Colors(Enum):
@@ -39,9 +38,10 @@ class Colors(Enum):
 
 class Cell(BaseModel):
     tp: TypeCell
-    walls: WallsType = WallsType.CLOSED
+    walls: WallsType = WallsType.CLOSE
     visited: bool = False
     color: Colors = None
+    is_path: bool = False
 
 
 class MazeGenerator(BaseModel):
@@ -52,7 +52,7 @@ class MazeGenerator(BaseModel):
     exit_x: int = Field(ge=0, le=299)
     exit_y: int = Field(ge=0, le=299)
     perfect: bool = True
-    _maze: np.ndarray = PrivateAttr()
+    _maze: List[List] = PrivateAttr()
 
     @model_validator(mode='after')
     def cannot_equel(self):
@@ -64,37 +64,106 @@ class MazeGenerator(BaseModel):
         return self
 
     def model_post_init(self, __content):
-        self._maze = np.full((self.width, self.height), Cell(tp=TypeCell.CELL))
-        self._maze[0, :] = Cell(tp=TypeCell.BORDER, visited=True,
-                                walls=WallsType.N)
-        self._maze[-1, :] = Cell(tp=TypeCell.BORDER, visited=True,
-                                 walls=WallsType.S)
-        self._maze[:, 0] = Cell(tp=TypeCell.BORDER, visited=True,
-                                walls=WallsType.W)
-        self._maze[:, -1] = Cell(tp=TypeCell.BORDER, visited=True,
-                                 walls=WallsType.E)
-        self._maze[0][0].walls = WallsType.N_W
-        self._maze[self.height-1][0].walls = WallsType.S_W
-        self._maze[0][self.width-1].walls = WallsType.E_S
-        self._maze[self.height-1][self.width-1].walls = WallsType.N_E
+        self._maze = []
+        for y in range(0, self.height):
+            self._maze.append([])
+            for x in range(0, self.width):
+                self._maze[y].append(Cell(tp=TypeCell.WALL))
 
     def __str__(self):
         result = []
         for y in self._maze:
             for x in y:
-                result.append(hex(x.walls.value)[2:].upper())
+                if isinstance(x.walls, WallsType):
+                    result.append(hex(x.walls.value)[2:].upper())
+                else:
+                    result.append(hex(x.walls)[2:].upper())
             # result.append('\n')
         return ''.join(result)
 
+    def render_maze(self):
+        def get_corner(y, x):
+            up = False
+            down = False
+            left = False
+            right = False
+
+            if y > 0:
+                if x < self.width:
+                    up = bool(self._maze[y - 1][x].walls.value & 0b0001)
+                else:
+                    up = bool(self._maze[y - 1][x - 1].walls.value & 0b0100)
+
+            if y < self.height:
+                if x < self.width:
+                    down = bool(self._maze[y][x].walls.value & 0b0001)
+                else:
+                    down = bool(self._maze[y][x - 1].walls.value & 0b0100)
+
+            if x > 0:
+                if y < self.height:
+                    left = bool(self._maze[y][x - 1].walls.value & 0b1000)
+                else:
+                    left = bool(self._maze[y - 1][x - 1].walls.value & 0b0010)
+
+            if x < self.width:
+                if y < self.height:
+                    right = bool(self._maze[y][x].walls.value & 0b1000)
+                else:
+                    right = bool(self._maze[y - 1][x].walls.value & 0b0010)
+
+            index = (1 if up else 0) + (2 if down else 0) + (4 if right else 0) + (8 if left else 0)
+            chars = " ┃┃┃━┗┏┣━┛┓┫━┻┳╋"
+            return chars[index]
+
+        for y in range(self.height):
+            top_line = ""
+            mid_line = ""
+
+            for x in range(self.width):
+                cell = self._maze[y][x]
+
+                top_line += get_corner(y, x)
+                top_line += "━━━" if cell.walls.value & 8 else "   "
+
+                mid_line += "┃" if cell.walls.value & 1 else " "
+                mid_line += " # " if cell.is_path else "   "
+
+            top_line += get_corner(y, self.width)
+            mid_line += "┃" if self._maze[y][self.width - 1].walls.value & 4 else " "
+
+            print(top_line)
+            print(mid_line)
+
+        low_line = ""
+        for x in range(self.width):
+            low_line += get_corner(self.height, x)
+            low_line += "━━━" if self._maze[self.height - 1][x].walls.value & 0b0010 else "   "
+
+        low_line += get_corner(self.height, self.width)
+        print(low_line)
+
     def generate_maze(self):
-        x, y = 1, 1
+        s_x, s_y = 0, 0
+        out_range = lambda x, y: x > self.width-1 or x < 0 or y > self.height-1 or y < 0 # noqa
 
         def track_to(x, y):
-            
-            self._maze[x][y].visited = True
-            self._maze[x][y].tp = TypeCell.WALL
-            self._maze[x][y].walls = r.choice(list(WallsType))
-        track_to(x, y)
+            if out_range(x, y) or self._maze[y][x].visited is True:
+                return
+            self._maze[y][x].visited = True
+            if x == 0 or y == 0 or x == self.width-1 or y == self.height-1:
+                self._maze[y][x].tp = TypeCell.BORDER
+            self._maze[y][x].walls = r.choice(list(WallsType))
+            direct = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+            r.shuffle(direct)
+            for d in direct:
+                # print(d)
+                x, y = d
+                if out_range(x, y):
+                    continue
+                track_to(x, y)
+            return
+        track_to(s_x, s_y)
 
 
 def main():
@@ -104,12 +173,8 @@ def main():
                          entry_y=0,
                          exit_x=2,
                          exit_y=2)
-    # maze.generate_maze()
-    # mlx_ptr = m.mlx_init()
-    render_maze(str(maze), 5, 5)
-    # for wall in txtr[0b1111]:
-    #     print(wall)
-    # m.mlx_loop(mlx_ptr)
+    maze.generate_maze()
+    maze.render_maze()
 
 
 if __name__ == '__main__':
