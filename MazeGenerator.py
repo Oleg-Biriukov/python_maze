@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, model_validator, PrivateAttr
 import numpy as np
 import random as r
 from mlx import Mlx
+from test import render_maze
 
 
 class TypeCell(Enum):
@@ -82,24 +83,17 @@ class MazeGenerator(BaseModel):
         for y in self._maze:
             for x in y:
                 result.append(hex(x.walls.value)[2:].upper())
-            result.append('\n')
+            # result.append('\n')
         return ''.join(result)
 
     def generate_maze(self):
         x, y = 1, 1
 
         def track_to(x, y):
+            
             self._maze[x][y].visited = True
             self._maze[x][y].tp = TypeCell.WALL
-            self._maze[x][y].walls = r.choice()
-            if self._maze[x+1][y].visited is False:
-                return track_to(x+1, y)
-            if self._maze[x-1][y].visited is False:
-                return track_to(x-1, y)
-            if self._maze[x][y+1].visited is False:
-                return track_to(x, y+1)
-            if self._maze[x][y-1].visited is False:
-                return track_to(x, y-1)
+            self._maze[x][y].walls = r.choice(list(WallsType))
         track_to(x, y)
 
 
@@ -112,7 +106,7 @@ def main():
                          exit_y=2)
     # maze.generate_maze()
     # mlx_ptr = m.mlx_init()
-    print(maze)
+    render_maze(str(maze), 5, 5)
     # for wall in txtr[0b1111]:
     #     print(wall)
     # m.mlx_loop(mlx_ptr)
