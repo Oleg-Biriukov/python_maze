@@ -147,13 +147,49 @@ class MazeGenerator(BaseModel):
         s_x, s_y = 0, 0
         out_range = lambda x, y: x > self.width-1 or x < 0 or y > self.height-1 or y < 0 # noqa
 
-        def track_to(x, y):
+        def check_sides(x: int, y: int) -> list[WallsType]:
+            filtr_list = [w for w in list(WallsType)
+                          if w != WallsType.CLOSE]
+            if x == 0 and y == 0:  # top left corner
+                return [w for w in filtr_list
+                        if w.value & 0b1001]
+
+            if x == self.width-1 and y == 0:  # top right corner
+                return [w for w in filtr_list
+                        if w.value & 0b1100]
+
+            if x == 0 and y == self.height-1:  # bottom left corner
+                return [w for w in filtr_list
+                        if w.value & 0b0110]
+
+            if x == self.width-1 and y == self.height-1:  # bottom right corner
+                return [w for w in filtr_list
+                        if w.value & 0b0011]
+
+            if x > 0 and x < self.width-1 and y == 0:  # top border
+                return [w for w in filtr_list
+                        if w.value & 0b1000]
+
+            if x > 0 and x < self.width-1 and y == self.height-1:  # bottom border
+                return [w for w in filtr_list
+                        if w.value & 0b0010]
+
+            if y > 0 and y < self.height-1 and x == 0:  # left border
+                return [w for w in filtr_list
+                        if w.value & 0b0001]
+
+            if y > 0 and y < self.height-1 and x == self.width-1:  # right border
+                return [w for w in filtr_list
+                        if w.value & 0b0100]
+            return filtr_list
+
+        def track_to(x: int, y: int) -> None:
             if out_range(x, y) or self._maze[y][x].visited is True:
                 return
             self._maze[y][x].visited = True
             if x == 0 or y == 0 or x == self.width-1 or y == self.height-1:
                 self._maze[y][x].tp = TypeCell.BORDER
-            self._maze[y][x].walls = r.choice(list(WallsType))
+            self._maze[y][x].walls = r.choice(check_sides(x, y))
             direct = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
             r.shuffle(direct)
             for d in direct:
@@ -167,13 +203,19 @@ class MazeGenerator(BaseModel):
 
 
 def main():
-    maze = MazeGenerator(width=5,
-                         height=5,
+    maze = MazeGenerator(width=30,
+                         height=30,
                          entry_x=0,
                          entry_y=0,
                          exit_x=2,
                          exit_y=2)
+    my_seed4 = "B91553955393939391555555553D13AEC3BAC3BC6AAC6C6C55555553C3EAC396AC56857AAB95513953B956D056BC694553853AAC4396AAD2AA953E93A9545396C7AAC53EC3AC3C6C47C52AC69556C3952C53C53AC3C5179393EA93A95396C3C53A97AABA95296AAC52AAAA96C53C3D6AC52AAC696A96C396AAC2A93945693C53AA87947AC556ABAC3EAAEA953A83BAAA83879697956AC3C56C3AA96AAC2AC6AAA96945693A96955386AC3AAD2A97AC6C3AD152C2A96956ABABC6C3EAC54393AC3C783EC6969546A853FC56FFFAEAAD453EC393AD69556A96FD5157FA96C13BA952AC69569556C3FFFAFFFAA93EAC2A96C39693A9793C53FAFD546AC3C3C6AB96A96C6A96C53AFAFFF956BC3C13AAA9683B9469396A92D5529383C3EAAAAAD6AC2D16AC3AAC5156EC6C3C3AAAAC5383C3C7C3AAA97A95539547C6AA853AAC3C5556AAAC16C53AC395556AABC687A955516A83C7956A92C39792AC13A96AD55296EA95693AAE96C3AAC3AC6A92953EA93C693AC6C3C396AABAC396AEC3C3C6C556C6D1547A856AAC3AC3C55478555557913C5396C53AA96C7A95553A9555396A8556C5396AAAD156AD5546AD53C6BAE95517AE92C456D54555554554556C5457C5456E"
+
     maze.generate_maze()
+    # for y in maze._maze:
+    #     for x in y:
+    #         print(x.tp.value, end=' ')
+    #     print()
     maze.render_maze()
 
 
