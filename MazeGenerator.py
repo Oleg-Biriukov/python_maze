@@ -5,6 +5,7 @@ import numpy as np
 import random as r
 from mlx import Mlx
 
+
 class TypeCell(Enum):
     BORDER = 'BORDER'
     CELL = 'CELL'
@@ -71,17 +72,17 @@ class MazeGenerator(BaseModel):
                                 walls=WallsType.W)
         self._maze[:, -1] = Cell(tp=TypeCell.BORDER, visited=True,
                                  walls=WallsType.E)
-        self._maze[0][0].walls = txtr[0b0110]
-        self._maze[self.height-1][0].walls = txtr[0b0011]
+        self._maze[0][0].walls = WallsType.N_W
+        self._maze[self.height-1][0].walls = WallsType.S_W
+        self._maze[0][self.width-1].walls = WallsType.E_S
+        self._maze[self.height-1][self.width-1].walls = WallsType.N_E
 
     def __str__(self):
         result = []
-        for y in range(0, self.height):
-            for x in range(0, self.width):
-                for s_wall in range(0, len(self._maze[y][x].walls)):
-                    for time in range(0, self.width):
-                        result.append(self._maze[y][time].walls[s_wall])
-                    result.append('\n')
+        for y in self._maze:
+            for x in y:
+                result.append(hex(x.walls.value)[2:].upper())
+            result.append('\n')
         return ''.join(result)
 
     def generate_maze(self):
@@ -110,11 +111,11 @@ def main():
                          exit_x=2,
                          exit_y=2)
     # maze.generate_maze()
-    mlx_ptr = m.mlx_init()
-    # print(maze)
+    # mlx_ptr = m.mlx_init()
+    print(maze)
     # for wall in txtr[0b1111]:
     #     print(wall)
-    m.mlx_loop(mlx_ptr)
+    # m.mlx_loop(mlx_ptr)
 
 
 if __name__ == '__main__':
