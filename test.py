@@ -1,9 +1,21 @@
-import time
 import os
 import heapq
-
+import sys
+import time
+from unittest import skip
 
 # ━ ┃ ┏ ┓ ┗  ┛ ┣  ┫  ┳ ╋  ┻
+
+RED = "\033[31m"
+GREEN = "\033[32m"
+BLUE = "\033[34m"
+YELLOW = "\033[33m"
+PURPLE = "\033[35m"
+LIGHTBLUE = "\033[94m"
+WHITE = "\033[97m"
+RESET = "\033[0m"
+CYAN = "\033[96m"
+
 
 class Cell:
     def __init__(self, x: int, y: int, hex_val: str):
@@ -22,6 +34,7 @@ class Cell:
         self.is_path = False
         self.is_end = False
         self.is_start = False
+        self.is_42 = val == 15
 
 
     def __lt__(self, other):
@@ -77,7 +90,10 @@ def get_corner(matrix, y, x, width, height):
     return chars[index]
 
 
-def render_maze(matrix, width, height):
+def render_maze(matrix, width, height, color_id:int):
+    colors = [WHITE, RED, GREEN, BLUE, YELLOW, PURPLE, LIGHTBLUE]
+
+    color_id = color_id % len(colors)
     for y in range(height):
         top_line = ""
         mid_line = ""
@@ -95,6 +111,8 @@ def render_maze(matrix, width, height):
                 mid_line += " F "
             elif cell.is_path:
                 mid_line += " # "
+            elif cell.is_42:
+                mid_line += f"{CYAN}███{colors[color_id]}"
             else:
                 mid_line += "   "
 
@@ -102,9 +120,9 @@ def render_maze(matrix, width, height):
         top_line += get_corner(matrix, y, width, width, height)
         mid_line += "┃" if matrix[y][width - 1].walls["right"] else " "
 
-        print(top_line)
+        print(f"{colors[color_id]}{top_line}{RESET}")
         #time.sleep(0.2)
-        print(mid_line)
+        print(f"{colors[color_id]}{mid_line}{RESET}")
         #time.sleep(0.2)
 
     low_line = ""
@@ -113,21 +131,40 @@ def render_maze(matrix, width, height):
         low_line += "━━━" if matrix[height - 1][x].walls["bottom"] else "   "
 
     low_line += get_corner(matrix, height, width, width, height)
-    print(low_line)
+    print(f"{colors[color_id]}{low_line}{RESET}")
 
 def manhattan_distance(start_x,start_y, end_x, end_y):
     return abs(start_x - end_x) + abs(start_y - end_y)
 
 def trace_path(end_cell):
     path = []
+    direction_string = ""
+    moves = {
+        (0, -1): "N",
+        (0, 1): "S",
+        (1, 0): "E",
+        (-1, 0): "W"
+    }
     current =  end_cell
 
     while current is not None:
-        path.append((current.y, current.x))
+        path.append(current)
         current = current.parent
 
-    return path[::-1]
+    path = path[::-1]
 
+    path_coords = [(node.y, node.x) for node in path]
+
+    for i in range(len(path) -1):
+        curr = path[i]
+        nxt = path[i+1]
+
+        dx = nxt.x - curr.x
+        dy = nxt.y - curr.y
+
+        direction_string += moves.get((dx, dy), "")
+
+    return path_coords, direction_string
 
 def solve_maze(matrix, width, height, start_x, start_y, end_x, end_y):
     directions = [
@@ -152,7 +189,9 @@ def solve_maze(matrix, width, height, start_x, start_y, end_x, end_y):
             continue
         closed_list.add((current_cell.y, current_cell.x))
 
-        yield trace_path(current_cell)
+        coords, directions_path = trace_path(current_cell)
+
+        yield coords, directions_path
 
         if current_cell.x == end_x and current_cell.y == end_y:
             return
@@ -177,7 +216,93 @@ def solve_maze(matrix, width, height, start_x, start_y, end_x, end_y):
 
 
 
+def write_seed_to_file(seed:str, width:int, height:int):
+    with open("output_maze.txt", "w") as file:
+        for rows in range(height):
+            for letter in range(width):
+                file.write(f"{seed[rows*width+letter].upper()}")
+            file.write("\n")
+        file.write("\n")
 
+
+def write_coordinates_to_file(sx:int, sy:int, ex:int, ey:int):
+    try:
+        with open("output_maze.txt", "a") as file:
+            file.write(f"{sx},{sy}\n{ex},{ey}\n")
+    except FileNotFoundError:
+        print("File not exist")
+
+
+def write_path_to_file(path:str):
+    with open("output_maze.txt", "a") as file:
+        file.write(path)
+
+def maze_run(seed:str, width:int, height:int, start_x:int, start_y:int, end_x:int, end_y:int):
+    os.system("clear")
+    matrix = seed_to_objects_matrix_converter(seed, width, height)
+
+    matrix[start_y][start_x].g = 0
+    matrix[start_y][start_x].is_start = True
+    matrix[end_y][end_x].is_end = True
+    i = 0
+
+    render_maze(matrix, width, height, i)
+    first_launch = True
+
+    while 1:
+        print("Choose command:\nc/C - change the color\ns/S - show the path\nh/H - hide the path\nq/Q - quit the program")
+        terminal_input = input("Enter: ")
+        if terminal_input == "c" or terminal_input == "C":
+            os.system("clear")
+            i += 1
+            render_maze(matrix, width, height, i)
+
+        elif terminal_input == "s" or terminal_input == "S":
+            for row in matrix:
+                for cell in row:
+                    cell.g = float('inf')
+                    cell.h = 0
+                    cell.parent = None
+                    cell.is_path = False
+
+            matrix[start_y][start_x].g = 0
+            final_destination = ""
+            for path_data in solve_maze(matrix, width, height, start_x, start_y, end_x, end_y):
+                os.system("clear")
+
+                path, direction_path = path_data
+                final_destination = direction_path
+
+                for row in matrix:
+                    for cell in row:
+                        cell.is_path = False
+
+                for py, px in path:
+                    matrix[py][px].is_path = True
+
+                render_maze(matrix, width, height, i)
+                time.sleep(0.1)
+            if first_launch:
+                write_path_to_file(final_destination)
+                first_launch = False
+
+        elif terminal_input == "h" or terminal_input == "H":
+            os.system("clear")
+            for row in matrix:
+                for cell in row:
+                    cell.is_path = False
+            render_maze(matrix, width, height, i)
+
+        elif terminal_input == "q" or terminal_input == "Q":
+            os.system("clear")
+            quit()
+        elif terminal_input == "r" or terminal_input == "R":
+            first_launch = True
+            #тут буде створення нового сіда
+            pass
+        else:
+            os.system("clear")
+            render_maze(matrix, width, height, i)
 
 
 
@@ -194,34 +319,17 @@ def main():
     my_seed3 = "D3915791579396EC53AC556AC3953AA9553ABC69686AD52A8396969693C6AEA96BC56C53A96C54393952AC393D2EAAD687C6C3C3AC53A95556BAC392AA97954696AEAAA96953C3C3AA86D294543AAAAF96EFFFAA86AFC5157FEAC3AFFFAFFF9696C3BFAFD503A97C2FAFFFAAAC55438393EAC553BC6AAC52953A8556A93EC3C6C393C6C3BAD53AAC3956AC396AC3AA9383AA9696AC6AAAAC43A9457AEAC3D46AB9529696953C6A96A96D43C39003C45556D46C46"
     #30 30
     my_seed4 = "B91553955393939391555555553D13AEC3BAC3BC6AAC6C6C55555553C3EAC396AC56857AAB95513953B956D056BC694553853AAC4396AAD2AA953E93A9545396C7AAC53EC3AC3C6C47C52AC69556C3952C53C53AC3C5179393EA93A95396C3C53A97AABA95296AAC52AAAA96C53C3D6AC52AAC696A96C396AAC2A93945693C53AA87947AC556ABAC3EAAEA953A83BAAA83879697956AC3C56C3AA96AAC2AC6AAA96945693A96955386AC3AAD2A97AC6C3AD152C2A96956ABABC6C3EAC54393AC3C783EC6969546A853FC56FFFAEAAD453EC393AD69556A96FD5157FA96C13BA952AC69569556C3FFFAFFFAA93EAC2A96C39693A9793C53FAFD546AC3C3C6AB96A96C6A96C53AFAFFF956BC3C13AAA9683B9469396A92D5529383C3EAAAAAD6AC2D16AC3AAC5156EC6C3C3AAAAC5383C3C7C3AAA97A95539547C6AA853AAC3C5556AAAC16C53AC395556AABC687A955516A83C7956A92C39792AC13A96AD55296EA95693AAE96C3AAC3AC6A92953EA93C693AC6C3C396AABAC396AEC3C3C6C556C6D1547A856AAC3AC3C55478555557913C5396C53AA96C7A95553A9555396A8556C5396AAAD156AD5546AD53C6BAE95517AE92C456D54555554554556C5457C5456E"
-
     #12 12
     my_seed5 = "D53951395513D3AABAEA956E92AC6C16C553AAC553C55796AC7FBC3FFFC3853FC5057F96E96FFFAFFFC396953FAFD5168547AFAFFF83AB93C3AD156AAAAC56C3C57AC6C555545556"
-    os.system("clear")
-
-    matrix = seed_to_objects_matrix_converter(my_seed4, width, height)
-
 
     start_x, start_y = 0,0
-    end_x, end_y = 25,25
+    end_x, end_y = 10,0
 
-    matrix[start_y][start_x].g = 0
-    matrix[start_y][start_x].is_start = True
-    matrix[end_y][end_x].is_end = True
+    write_seed_to_file(my_seed4, width, height)
+    write_coordinates_to_file(start_x, start_y, end_x, end_y)
+    maze_run(my_seed4, width, height, start_x, start_y, end_x, end_y)
 
 
-    for path in solve_maze(matrix, width, height, start_x, start_y, end_x, end_y):
-        os.system("clear")
-        for row in matrix:
-            for cell in row:
-                cell.is_path = False
-
-        for py,px in path:
-            matrix[py][px].is_path = True
-
-        render_maze(matrix, width, height)
-
-        time.sleep(0.1)
 
 
 main()
