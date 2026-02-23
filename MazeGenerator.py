@@ -192,7 +192,7 @@ class MazeGenerator(BaseModel):
             return filtr_list
 
         def _check_cells_cor(x: int, y: int) -> list[WallsType]:
-            cor = _check_corners(x, y)
+            cor = _check_corners(x, y)  # im preparing needed comb of walls based is it border or not
             directions = {WallsType.N: (x, y+1),
                           WallsType.W: (x+1, y),
                           WallsType.S: (x, y-1),
@@ -207,8 +207,10 @@ class MazeGenerator(BaseModel):
                 cell = self._maze[posy][posx]
                 if cell.visited is True:
                     if cell.walls.value & c.value == c.value:
-                        print(bin(mask))
-                        mask |= c.value
+                        if c.value > 2:
+                            mask |= (c.value >> 2)
+                        else:
+                            mask |= (c.value << 2)
             print(bin(mask), x, y)
             return [w for w in cor if w.value & mask == mask]
 
@@ -217,11 +219,11 @@ class MazeGenerator(BaseModel):
             if (self._out_range(x, y) or
                     self._maze[y][x].visited is True):
                 return
-            try:
-                self._maze[y][x].walls = r.choice(_check_cells_cor(x, y))
-            except Exception:
-                self.render_maze()
-                exit()
+            # try:
+            self._maze[y][x].walls = r.choice(_check_cells_cor(x, y))
+            # except Exception:
+            #     self.render_maze()
+            #     exit()
             self._maze[y][x].visited = True
             direct = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
             r.shuffle(direct)
