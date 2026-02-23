@@ -151,7 +151,11 @@ class MazeGenerator(BaseModel):
         print(times)
 
         def _check_corners(x: int, y: int) -> dict[WallsType, tuple[int, int]]:
-            filtr_list = {}
+            filtr_list = {
+                WallsType.N: (x, y-1),
+                WallsType.E: (x+1, y),
+                WallsType.S: (x, y+1),
+                WallsType.W: (x-1, y)}
 
             if x == 0 and y == 0:  # top left corner
                 del filtr_list[WallsType.N]
@@ -176,25 +180,22 @@ class MazeGenerator(BaseModel):
             return filtr_list
 
         def track_to(x: int, y: int, op: int) -> None:
-            nonlocal times
             if (self._out_range(x, y) or
                     self._maze[y][x].visited is True):
                 return
             self._maze[y][x].visited = True
-            direct = list({
-                WallsType.N: (x, y-1),
-                WallsType.E: (x+1, y),
-                WallsType.S: (x, y+1),
-                WallsType.W: (x-1, y)}.items())
+            direct = list(_check_corners(x, y).items())
             r.shuffle(direct)
             print(direct)
+            times = 0
             for dir, pos in direct:
+                times += 1
                 if self._out_range(*pos):
                     continue
-                if op is not None:
-                    self._maze[y][x].walls = ~(dir | op) & 0b1111
-                else:
-                    self._maze[y][x].walls = ~dir & 0b1111
+                if op is not None and times == 1:
+                    self._maze[y][x].walls &= ~(dir | op) & 0b1111
+                if op is None and times == 1:
+                    self._maze[y][x].walls &= ~dir & 0b1111
                 track_to(*pos, oposite[dir])
             return
         print(times)
