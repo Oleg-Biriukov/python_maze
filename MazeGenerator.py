@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntFlag
 from typing import List
 from pydantic import BaseModel, Field, model_validator, PrivateAttr
 import random as r
@@ -12,22 +12,11 @@ class TypeCell(Enum):
     TEXT = 'TEXT'
 
 
-class WallsType(Enum):
+class WallsType(IntFlag):
     W = 0b0001
     S = 0b0010
     N = 0b1000
     E = 0b0100
-    S_W = 0b0011
-    E_W = 0b0101
-    E_S = 0b0110
-    N_W = 0b1001
-    N_S = 0b1010
-    N_E = 0b1100
-    E_S_W = 0b0111
-    N_S_W = 0b1011
-    N_E_W = 0b1101
-    N_E_S = 0b1110
-    OPEN = 0b0000
     CLOSE = 0b1111
 
 
@@ -153,86 +142,63 @@ class MazeGenerator(BaseModel):
     def generate_maze(self):
         s_x, s_y = 0, 0
         times = (self.height) * (self.width)
+        oposite = {
+            WallsType.E: WallsType.W,
+            WallsType.W: WallsType.E,
+            WallsType.S: WallsType.N,
+            WallsType.N: WallsType.S
+        }
+        print(times)
 
-        def _check_corners(x: int, y: int) -> list[WallsType]:
-            filtr_list = [w for w in list(WallsType)
-                          if w != WallsType.CLOSE and
-                          w != WallsType.OPEN]
+        def _check_corners(x: int, y: int) -> dict[WallsType, tuple[int, int]]:
+            filtr_list = {}
+
             if x == 0 and y == 0:  # top left corner
-                return [w for w in filtr_list
-                        if w.value & 0b1001 == 0b1001]
-
-            if x == self.width-1 and y == 0:  # top right corner
-                return [w for w in filtr_list
-                        if w.value & 0b1100 == 0b1100]
-
-            if x == 0 and y == self.height-1:  # bottom left corner
-                return [w for w in filtr_list
-                        if w.value & 0b0011 == 0b00011]
-
-            if x == self.width-1 and y == self.height-1:  # bottom right corner
-                return [w for w in filtr_list
-                        if w.value & 0b0110 == 0b0110]
-
-            if x > 0 and x < self.width-1 and y == 0:  # top border
-                return [w for w in filtr_list
-                        if w.value & 0b1000]
-
-            if x > 0 and x < self.width-1 and y == self.height-1:  # bottom border
-                return [w for w in filtr_list
-                        if w.value & 0b0010]
-
-            if y > 0 and y < self.height-1 and x == 0:  # left border
-                return [w for w in filtr_list
-                        if w.value & 0b0001]
-
-            if y > 0 and y < self.height-1 and x == self.width-1:  # right border
-                return [w for w in filtr_list
-                        if w.value & 0b0100]
+                del filtr_list[WallsType.N]
+                del filtr_list[WallsType.W]
+            elif x == self.width-1 and y == 0:  # top right corner
+                del filtr_list[WallsType.N]
+                del filtr_list[WallsType.E]
+            elif x == 0 and y == self.height-1:  # bottom left corner
+                del filtr_list[WallsType.S]
+                del filtr_list[WallsType.W]
+            elif x == self.width-1 and y == self.height-1:  # bottom right corner
+                del filtr_list[WallsType.S]
+                del filtr_list[WallsType.E]
+            elif x > 0 and x < self.width-1 and y == 0:  # top border
+                del filtr_list[WallsType.N]
+            elif x > 0 and x < self.width-1 and y == self.height-1:  # bottom border
+                del filtr_list[WallsType.S]
+            elif y > 0 and y < self.height-1 and x == 0:  # left border
+                del filtr_list[WallsType.W]
+            elif y > 0 and y < self.height-1 and x == self.width-1:  # right border
+                del filtr_list[WallsType.E]
             return filtr_list
 
-        def _check_cells_cor(x: int, y: int) -> list[WallsType]:
-            cor = _check_corners(x, y)  # im preparing needed comb of walls based is it border or not
-            directions = {WallsType.N: (x, y+1),
-                          WallsType.W: (x+1, y),
-                          WallsType.S: (x, y-1),
-                          WallsType.E: (x-1, y)} 
-            # remake this one, i assume this is where problem occured
-            mask = 0b0000
-
-            for c, d in directions.items():
-                if self._out_range(*d):
-                    continue
-                posx, posy = d
-                cell = self._maze[posy][posx]
-                if cell.visited is True:
-                    if cell.walls.value & c.value == c.value:
-                        if c.value > 2:
-                            mask |= (c.value >> 2)
-                        else:
-                            mask |= (c.value << 2)
-            print(bin(mask), x, y)
-            return [w for w in cor if w.value & mask == mask]
-
-        def track_to(x: int, y: int) -> None:
+        def track_to(x: int, y: int, op: int) -> None:
             nonlocal times
             if (self._out_range(x, y) or
                     self._maze[y][x].visited is True):
                 return
-            # try:
-            self._maze[y][x].walls = r.choice(_check_cells_cor(x, y))
-            # except Exception:
-            #     self.render_maze()
-            #     exit()
             self._maze[y][x].visited = True
-            direct = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+            direct = list({
+                WallsType.N: (x, y-1),
+                WallsType.E: (x+1, y),
+                WallsType.S: (x, y+1),
+                WallsType.W: (x-1, y)}.items())
             r.shuffle(direct)
-            for d in direct:
-                if self._out_range(*d):
+            print(direct)
+            for dir, pos in direct:
+                if self._out_range(*pos):
                     continue
-                track_to(*d)
+                if op is not None:
+                    self._maze[y][x].walls = ~(dir | op) & 0b1111
+                else:
+                    self._maze[y][x].walls = ~dir & 0b1111
+                track_to(*pos, oposite[dir])
             return
-        track_to(s_x, s_y)
+        print(times)
+        track_to(s_x, s_y, None)
 
 
 def main():
@@ -243,10 +209,10 @@ def main():
                          exit_x=2,
                          exit_y=2)
     maze.generate_maze()
-    # for y in maze._maze:
-    #     for x in y:
-    #         print(x.visited, end=' ')
-    #     print()
+    for y in maze._maze:
+        for x in y:
+            print(bin(x.walls.value), end=' ')
+        print()
     maze.render_maze()
     print(maze)
 
