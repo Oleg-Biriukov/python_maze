@@ -40,7 +40,7 @@ class MazeGenerator(BaseModel):
     exit_x: int = Field(ge=0, le=299)
     exit_y: int = Field(ge=0, le=299)
     perfect: bool = True
-    _maze: List[List] = PrivateAttr()
+    _maze: List[List] = PrivateAttr(default=[[]])
 
     @model_validator(mode='after')
     def cannot_equel(self):
@@ -56,7 +56,7 @@ class MazeGenerator(BaseModel):
             return True
         return False
 
-    def model_post_init(self, __content):
+    def _generate_matrix(self):
         self._maze = []
         for y in range(0, self.height):
             self._maze.append([])
@@ -76,6 +76,9 @@ class MazeGenerator(BaseModel):
                     result.append(hex(x.walls)[2:].upper())
             # result.append('\n')
         return ''.join(result)
+
+    def paste_text(text_png: list[list[int]]):
+        pass
 
     def render_maze(self):
         def get_corner(y, x):
@@ -140,8 +143,8 @@ class MazeGenerator(BaseModel):
         print(low_line)
 
     def generate_maze(self):
+        self._generate_matrix()
         x, y = 0, 0
-        times = (self.height) * (self.width)
         oposite = {
             WallsType.E: WallsType.W,
             WallsType.W: WallsType.E,
@@ -167,7 +170,7 @@ class MazeGenerator(BaseModel):
                 if self._out_range(x, y):
                     continue
                 cell = self._maze[y][x]
-                if cell.visited is True:
+                if cell.visited is True or cell.tp is TypeCell.TEXT:
                     continue
                 else:
                     neigh[d] = c
@@ -195,14 +198,19 @@ class MazeGenerator(BaseModel):
 
 
 def main():
-    maze = MazeGenerator(width=50,
-                         height=50,
+    maze = MazeGenerator(width=5,
+                         height=5,
                          entry_x=0,
                          entry_y=0,
                          exit_x=2,
                          exit_y=2)
+    text_png = [[1, 0, 0, 0, 1, 1, 1],
+                [1, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 0, 1, 1, 1],
+                [0, 0, 1, 0, 1, 0, 0],
+                [0, 0, 1, 0, 1, 1, 1]]
+    print(maze)
     maze.generate_maze()
-    
     maze.render_maze()
     print(maze)
 
