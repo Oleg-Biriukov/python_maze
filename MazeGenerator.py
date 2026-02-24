@@ -140,7 +140,7 @@ class MazeGenerator(BaseModel):
         print(low_line)
 
     def generate_maze(self):
-        s_x, s_y = 0, 0
+        x, y = 0, 0
         times = (self.height) * (self.width)
         oposite = {
             WallsType.E: WallsType.W,
@@ -148,72 +148,61 @@ class MazeGenerator(BaseModel):
             WallsType.S: WallsType.N,
             WallsType.N: WallsType.S
         }
-        print(times)
-
-        def _check_corners(x: int, y: int) -> dict[WallsType, tuple[int, int]]:
-            filtr_list = {
+        stack = []
+        directions = lambda x, y: {  # noqa
                 WallsType.N: (x, y-1),
                 WallsType.E: (x+1, y),
                 WallsType.S: (x, y+1),
                 WallsType.W: (x-1, y)}
+        unvisited = lambda x, y: [(x, y) for y in range(len(self._maze))  # noqa
+                                  for x in range(len(self._maze[y]))
+                                  if self._maze[y][x].visited is False]
 
-            if x == 0 and y == 0:  # top left corner
-                del filtr_list[WallsType.N]
-                del filtr_list[WallsType.W]
-            elif x == self.width-1 and y == 0:  # top right corner
-                del filtr_list[WallsType.N]
-                del filtr_list[WallsType.E]
-            elif x == 0 and y == self.height-1:  # bottom left corner
-                del filtr_list[WallsType.S]
-                del filtr_list[WallsType.W]
-            elif x == self.width-1 and y == self.height-1:  # bottom right corner
-                del filtr_list[WallsType.S]
-                del filtr_list[WallsType.E]
-            elif x > 0 and x < self.width-1 and y == 0:  # top border
-                del filtr_list[WallsType.N]
-            elif x > 0 and x < self.width-1 and y == self.height-1:  # bottom border
-                del filtr_list[WallsType.S]
-            elif y > 0 and y < self.height-1 and x == 0:  # left border
-                del filtr_list[WallsType.W]
-            elif y > 0 and y < self.height-1 and x == self.width-1:  # right border
-                del filtr_list[WallsType.E]
-            return filtr_list
+        def _neigh(x, y) -> dict[WallsType, int]:
+            neigh = {}
+            drct = directions(x, y)
 
-        def track_to(x: int, y: int, op: int) -> None:
-            if (self._out_range(x, y) or
-                    self._maze[y][x].visited is True):
-                return
-            self._maze[y][x].visited = True
-            direct = list(_check_corners(x, y).items())
-            r.shuffle(direct)
-            print(direct)
-            times = 0
-            for dir, pos in direct:
-                times += 1
-                if self._out_range(*pos):
+            for d, c in drct.items():
+                x, y = c
+                if self._out_range(x, y):
                     continue
-                if op is not None and times == 1:
-                    self._maze[y][x].walls &= ~(dir | op) & 0b1111
-                if op is None and times == 1:
-                    self._maze[y][x].walls &= ~dir & 0b1111
-                track_to(*pos, oposite[dir])
-            return
-        print(times)
-        track_to(s_x, s_y, None)
+                cell = self._maze[y][x]
+                if cell.visited is True:
+                    continue
+                else:
+                    neigh[d] = c
+            return neigh
+
+        def _break_wall(cell: tuple[int], side: WallsType):
+            drct = directions(*cell)
+            x, y = cell
+            nx, ny = drct[side]
+            self._maze[y][x].walls &= ~side & 0b1111
+            self._maze[ny][nx].walls &= ~oposite[side] & 0b1111
+
+        stack.append((x, y))
+        self._maze[y][x].visited = True
+        while stack:
+            x, y = stack[0]
+            del stack[0]
+            while _neigh(x, y):
+                self._maze[y][x].visited = True
+                direct, c = r.choice(list(_neigh(x, y).items()))
+                _break_wall((x, y), direct)
+                stack.append((x, y))
+                x, y = c
+            self._maze[y][x].visited = True
 
 
 def main():
-    maze = MazeGenerator(width=10,
-                         height=10,
+    maze = MazeGenerator(width=50,
+                         height=50,
                          entry_x=0,
                          entry_y=0,
                          exit_x=2,
                          exit_y=2)
     maze.generate_maze()
-    for y in maze._maze:
-        for x in y:
-            print(bin(x.walls.value), end=' ')
-        print()
+    
     maze.render_maze()
     print(maze)
 
