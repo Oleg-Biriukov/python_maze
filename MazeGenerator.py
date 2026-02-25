@@ -7,7 +7,6 @@ import random as r
 
 
 class TypeCell(Enum):
-    BORDER = 'BORDER'
     WALL = 'WALL'
     TEXT = 'TEXT'
 
@@ -40,6 +39,7 @@ class MazeGenerator(BaseModel):
     exit_x: int = Field(ge=0, le=299)
     exit_y: int = Field(ge=0, le=299)
     perfect: bool = True
+    text: List[List[int]] = None
     _maze: List[List] = PrivateAttr(default=[[]])
 
     @model_validator(mode='after')
@@ -49,6 +49,12 @@ class MazeGenerator(BaseModel):
 
         if self.entry_y == self.exit_y:
             raise ValueError('Cannot be same')
+
+        if self.text:
+            w = len(self.text[0])
+            h = len(self.text)
+            if w >= self.width or h >= self.height:
+                raise ValueError('The maze too small')
         return self
 
     def _out_range(self, x: int, y: int) -> bool:
@@ -57,14 +63,22 @@ class MazeGenerator(BaseModel):
         return False
 
     def _generate_matrix(self):
-        self._maze = []
         for y in range(0, self.height):
             self._maze.append([])
             for x in range(0, self.width):
-                if x == 0 or y == 0 or x == self.width-1 or y == self.height-1:
-                    self._maze[y].append(Cell(tp=TypeCell.BORDER))
-                else:
-                    self._maze[y].append(Cell(tp=TypeCell.WALL))
+                self._maze[y].append(Cell(tp=TypeCell.WALL))
+
+        if self.text:
+            w = len(self.text[0])
+            h = len(self.text)
+            t_x = int((self.width - w) / 2)
+            t_y = int((self.height - h) / 2)
+            print(t_x, t_y)
+            for y in range(0, h):
+                for x in range(0, w):
+                    if self.text[y][x] == 1:
+                        # print(x, y)
+                        self._maze[y+t_y][x+t_x].tp = TypeCell.TEXT
 
     def __str__(self):
         result = []
@@ -157,9 +171,6 @@ class MazeGenerator(BaseModel):
                 WallsType.E: (x+1, y),
                 WallsType.S: (x, y+1),
                 WallsType.W: (x-1, y)}
-        unvisited = lambda x, y: [(x, y) for y in range(len(self._maze))  # noqa
-                                  for x in range(len(self._maze[y]))
-                                  if self._maze[y][x].visited is False]
 
         def _neigh(x, y) -> dict[WallsType, int]:
             neigh = {}
@@ -198,18 +209,25 @@ class MazeGenerator(BaseModel):
 
 
 def main():
-    maze = MazeGenerator(width=5,
-                         height=5,
-                         entry_x=0,
-                         entry_y=0,
-                         exit_x=2,
-                         exit_y=2)
     text_png = [[1, 0, 0, 0, 1, 1, 1],
                 [1, 0, 0, 0, 0, 0, 1],
                 [1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 1, 0, 1, 0, 0],
                 [0, 0, 1, 0, 1, 1, 1]]
+
+    maze = MazeGenerator(width=10,
+                         height=10,
+                         entry_x=0,
+                         entry_y=0,
+                         exit_x=2,
+                         exit_y=2,
+                         text=text_png)
     print(maze)
+    # maze._generate_matrix()
+    # for y in maze._maze:
+    #     for x in y:
+    #         print(x.tp, end=' ')
+    #     print()
     maze.generate_maze()
     maze.render_maze()
     print(maze)
