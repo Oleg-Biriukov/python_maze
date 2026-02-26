@@ -53,7 +53,7 @@ class MazeGenerator(BaseModel):
         if self.text:
             w = len(self.text[0])
             h = len(self.text)
-            if w >= self.width or h >= self.height:
+            if w+2 >= self.width or h+2 >= self.height:
                 raise ValueError('The maze too small')
         return self
 
@@ -206,6 +206,19 @@ class MazeGenerator(BaseModel):
                 stack.append((x, y))
                 x, y = c
             self._maze[y][x].visited = True
+        if self.perfect is False:
+            to_destoy_x = int((self.width * self.height) * 0.1 / self.width)
+            to_destoy_y = int((self.width * self.height) * 0.1 / self.height)
+            for y in r.choices(list(range(self.height)), k=range(to_destoy_y/self.width)):
+                for x in r.choices(list(range(self.width)), k=range(to_destoy_x/self.width)):
+                    for dir, cor in directions(x, y):
+                        if self._out_range(*cor):
+                            continue
+                        posx, poxy = cor
+                        cell = self._maze[poxy][posx]
+                        if cell.tp is TypeCell.TEXT:
+                            continue
+                        
 
 
 def main():
@@ -215,8 +228,8 @@ def main():
                 [0, 0, 1, 0, 1, 0, 0],
                 [0, 0, 1, 0, 1, 1, 1]]
 
-    maze = MazeGenerator(width=10,
-                         height=10,
+    maze = MazeGenerator(width=11,
+                         height=11,
                          entry_x=0,
                          entry_y=0,
                          exit_x=2,
