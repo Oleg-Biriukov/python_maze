@@ -73,11 +73,9 @@ class MazeGenerator(BaseModel):
             h = len(self.text)
             t_x = int((self.width - w) / 2)
             t_y = int((self.height - h) / 2)
-            print(t_x, t_y)
             for y in range(0, h):
                 for x in range(0, w):
                     if self.text[y][x] == 1:
-                        # print(x, y)
                         self._maze[y+t_y][x+t_x].tp = TypeCell.TEXT
 
     def __str__(self):
@@ -206,19 +204,23 @@ class MazeGenerator(BaseModel):
                 stack.append((x, y))
                 x, y = c
             self._maze[y][x].visited = True
+
         if self.perfect is False:
-            to_destoy_x = int((self.width * self.height) * 0.1 / self.width)
-            to_destoy_y = int((self.width * self.height) * 0.1 / self.height)
-            for y in r.choices(list(range(self.height)), k=range(to_destoy_y/self.width)):
-                for x in r.choices(list(range(self.width)), k=range(to_destoy_x/self.width)):
-                    for dir, cor in directions(x, y):
+            to_destoy_x = int((self.width * self.height) * 0.15 / self.height)
+            if to_destoy_x == 0:
+                to_destoy_x = 1
+            for y in range(self.height):
+                for x in r.choices(list(range(self.width)), k=to_destoy_x):
+                    for dir, cor in directions(x, y).items():
                         if self._out_range(*cor):
                             continue
                         posx, poxy = cor
-                        cell = self._maze[poxy][posx]
-                        if cell.tp is TypeCell.TEXT:
+                        n_cell = self._maze[poxy][posx]
+                        cell = self._maze[y][x]
+                        if (cell.tp is TypeCell.TEXT or
+                                n_cell.tp is TypeCell.TEXT):
                             continue
-                        
+                        _break_wall((x, y), dir)
 
 
 def main():
@@ -228,13 +230,14 @@ def main():
                 [0, 0, 1, 0, 1, 0, 0],
                 [0, 0, 1, 0, 1, 1, 1]]
 
-    maze = MazeGenerator(width=11,
-                         height=11,
+    maze = MazeGenerator(width=50,
+                         height=50,
                          entry_x=0,
                          entry_y=0,
                          exit_x=2,
                          exit_y=2,
-                         text=text_png)
+                         text=text_png,
+                         perfect=False)
     print(maze)
     # maze._generate_matrix()
     # for y in maze._maze:
