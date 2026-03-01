@@ -192,6 +192,8 @@ class MazeGenerator(BaseModel):
             self._maze[y][x].walls &= ~side & 0b1111
             self._maze[ny][nx].walls &= ~oposite[side] & 0b1111
 
+        def _check_space()
+
         stack.append((x, y))
         self._maze[y][x].visited = True
         while stack:
