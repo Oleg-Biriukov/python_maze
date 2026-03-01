@@ -2,8 +2,6 @@ from enum import Enum, IntFlag
 from typing import List
 from pydantic import BaseModel, Field, model_validator, PrivateAttr
 import random as r
-# from mlx import Mlx
-# from test import render_maze, seed_to_objects_matrix_converter
 
 
 class TypeCell(Enum):
@@ -19,37 +17,22 @@ class WallsType(IntFlag):
     CLOSE = 0b1111
 
 
-class Colors(Enum):
-    pass
-
-
 class Cell(BaseModel):
     tp: TypeCell
     walls: WallsType = WallsType.CLOSE
     visited: bool = False
-    color: Colors = None
     is_path: bool = False
 
 
 class MazeGenerator(BaseModel):
     width: int = Field(ge=1, le=300)
     height: int = Field(ge=1, le=300)
-    entry_x: int = Field(ge=0, le=299)
-    entry_y: int = Field(ge=0, le=299)
-    exit_x: int = Field(ge=0, le=299)
-    exit_y: int = Field(ge=0, le=299)
     perfect: bool = True
     text: List[List[int]] = None
     _maze: List[List] = PrivateAttr(default=[[]])
 
     @model_validator(mode='after')
     def cannot_equel(self):
-        if self.entry_x == self.exit_x:
-            raise ValueError('Cannot be same')
-
-        if self.entry_y == self.exit_y:
-            raise ValueError('Cannot be same')
-
         if self.text:
             w = len(self.text[0])
             h = len(self.text)
@@ -86,7 +69,6 @@ class MazeGenerator(BaseModel):
                     result.append(hex(x.walls.value)[2:].upper())
                 else:
                     result.append(hex(x.walls)[2:].upper())
-            # result.append('\n')
         return ''.join(result)
 
     def paste_text(text_png: list[list[int]]):
@@ -164,7 +146,9 @@ class MazeGenerator(BaseModel):
             WallsType.N: WallsType.S
         }
         stack = []
-        directions = lambda x, y: {  # noqa
+
+        def _dirct(x: int, y: int):
+            return { 
                 WallsType.N: (x, y-1),
                 WallsType.E: (x+1, y),
                 WallsType.S: (x, y+1),
@@ -172,7 +156,7 @@ class MazeGenerator(BaseModel):
 
         def _neigh(x, y) -> dict[WallsType, int]:
             neigh = {}
-            drct = directions(x, y)
+            drct = _dirct(x, y)
 
             for d, c in drct.items():
                 x, y = c
@@ -186,13 +170,18 @@ class MazeGenerator(BaseModel):
             return neigh
 
         def _break_wall(cell: tuple[int], side: WallsType):
-            drct = directions(*cell)
+            drct = _dirct(*cell)
             x, y = cell
             nx, ny = drct[side]
             self._maze[y][x].walls &= ~side & 0b1111
             self._maze[ny][nx].walls &= ~oposite[side] & 0b1111
 
-        def _check_space()
+        def _undo_wall(cell: tuple[int], side: WallsType):
+            drct = _dirct(*cell)
+            x, y = cell
+            nx, ny = drct[side]
+            self._maze[y][x].walls |= side
+            self._maze[ny][nx].walls |= oposite[side]
 
         stack.append((x, y))
         self._maze[y][x].visited = True
@@ -208,12 +197,12 @@ class MazeGenerator(BaseModel):
             self._maze[y][x].visited = True
 
         if self.perfect is False:
-            to_destoy_x = int((self.width * self.height) * 0.15 / self.height)
+            to_destoy_x = int((self.width * self.height) * 0.1 / self.height)
             if to_destoy_x == 0:
                 to_destoy_x = 1
             for y in range(self.height):
                 for x in r.choices(list(range(self.width)), k=to_destoy_x):
-                    for dir, cor in directions(x, y).items():
+                    for dir, cor in _dirct(x, y).items():
                         if self._out_range(*cor):
                             continue
                         posx, poxy = cor
@@ -223,6 +212,8 @@ class MazeGenerator(BaseModel):
                                 n_cell.tp is TypeCell.TEXT):
                             continue
                         _break_wall((x, y), dir)
+                        if cell.walls == 0:
+                            _undo_wall((x, y), dir)
 
 
 def main():
@@ -231,7 +222,7 @@ def main():
                 [1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 1, 0, 1, 0, 0],
                 [0, 0, 1, 0, 1, 1, 1]]
-
+    r.seed('fdssfdf')
     maze = MazeGenerator(width=50,
                          height=50,
                          entry_x=0,
@@ -241,11 +232,6 @@ def main():
                          text=text_png,
                          perfect=False)
     print(maze)
-    # maze._generate_matrix()
-    # for y in maze._maze:
-    #     for x in y:
-    #         print(x.tp, end=' ')
-    #     print()
     maze.generate_maze()
     maze.render_maze()
     print(maze)
