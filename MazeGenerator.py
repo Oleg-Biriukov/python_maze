@@ -256,6 +256,7 @@ def main():
                 [1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 1, 0, 1, 0, 0],
                 [0, 0, 1, 0, 1, 1, 1]]
+    r.seed('ff')
     maze = MazeGenerator(width=20,
                          height=20,
                          entry_x=0,
