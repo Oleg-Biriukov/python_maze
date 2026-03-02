@@ -1,7 +1,7 @@
 import os
 import time
 from abc import ABC, abstractmethod
-from models import Maze, Pathfinder, FileManager
+from .umodels import Maze, Pathfinder, FileManager
 
 COLORS = {
     "RED": "\033[31m",

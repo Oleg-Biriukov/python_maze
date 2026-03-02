@@ -1,5 +1,5 @@
-import os
 import argparse
+import os
 
 width = 30
 height = 30
@@ -9,7 +9,6 @@ parser.add_argument("--pretty", action="store_true", help="pretty maze")
 args = parser.parse_args()
 
 if args.pretty:
-    os.system(f"gnome-terminal --geometry={width*4+1}x{height*2+7} -- bash -c 'python3 test.py --pretty'")
+    os.system(f"gnome-terminal --geometry={width*4+1}x{height*2+8} -- bash -c 'python3 -m MazeVisualizer.main --pretty'")
 else:
-    os.system(f"gnome-terminal --geometry={width*4+1}x{height*2+7} -- bash -c 'python3 test.py'")
-
+    os.system(f"gnome-terminal --geometry={width*4+1}x{height*2+8} -- bash -c 'python3 -m MazeVisualizer.main'")
