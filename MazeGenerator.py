@@ -176,6 +176,32 @@ class MazeGenerator(BaseModel):
             self._maze[y][x].walls &= ~side & 0b1111
             self._maze[ny][nx].walls &= ~oposite[side] & 0b1111
 
+        def _check_wall(x: int, y: int) -> bool:
+            if (x >= 0 or y >= 0 or y <= self.width-3 or x <= self.height-3):
+                return True
+            if 
+            for dx in [-2, -1, 0]:
+                for dy in [-2, -1, 0]:
+                    cell = self._maze[y+dy][x+dx]
+                    if cell.walls & WallsType.S:
+                        return True
+            for dx in [2, 1, 0]:
+                for dy in [2, 1, 0]:
+                    cell = self._maze[y+dy][x+dx]
+                    if cell.walls & WallsType.N:
+                        return True
+            for dy in [2, 1, 0]:
+                for dx in [2, 1, 0]:
+                    cell = self._maze[y+dy][x+dx]
+                    if cell.walls & WallsType.W:
+                        return True
+            for dy in [-2, -1, 0]:
+                for dx in [-2, -1, 0]:
+                    cell = self._maze[y+dy][x+dx]
+                    if cell.walls & WallsType.E:
+                        return True
+            return False
+
         def _undo_wall(cell: tuple[int], side: WallsType):
             drct = _dirct(*cell)
             x, y = cell
@@ -222,9 +248,9 @@ def main():
                 [1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 1, 0, 1, 0, 0],
                 [0, 0, 1, 0, 1, 1, 1]]
-    r.seed('fdssfdf')
+    # r.seed('fdssfdf')
     maze = MazeGenerator(width=50,
-                         height=50,
+                         height=100,
                          entry_x=0,
                          entry_y=0,
                          exit_x=2,
