@@ -176,30 +176,37 @@ class MazeGenerator(BaseModel):
             self._maze[y][x].walls &= ~side & 0b1111
             self._maze[ny][nx].walls &= ~oposite[side] & 0b1111
 
-        def _check_wall(x: int, y: int) -> bool:
-            if (x >= 0 or y >= 0 or y <= self.width-3 or x <= self.height-3):
-                return True
-            if 
-            for dx in [-2, -1, 0]:
-                for dy in [-2, -1, 0]:
-                    cell = self._maze[y+dy][x+dx]
-                    if cell.walls & WallsType.S:
-                        return True
-            for dx in [2, 1, 0]:
-                for dy in [2, 1, 0]:
-                    cell = self._maze[y+dy][x+dx]
-                    if cell.walls & WallsType.N:
-                        return True
-            for dy in [2, 1, 0]:
-                for dx in [2, 1, 0]:
-                    cell = self._maze[y+dy][x+dx]
-                    if cell.walls & WallsType.W:
-                        return True
-            for dy in [-2, -1, 0]:
-                for dx in [-2, -1, 0]:
-                    cell = self._maze[y+dy][x+dx]
-                    if cell.walls & WallsType.E:
-                        return True
+        def _check_emptiness(x: int, y: int) -> bool:
+            def _check_room(x: int, y: int) -> bool:
+                count = 0
+                for dy in [y+0, y+1]:
+                    for dx in [x+0, x+1]:
+                        if self._maze[dy][dx].walls & WallsType.E:
+                            count += 1
+                for dy in [y+0, y+1]:
+                    for dx in [x+0, x+1]:
+                        if self._maze[dy][dx].walls & WallsType.E:
+                            count += 1
+                for dx in [x+0, x+1]:
+                    for dy in [y+0, y+1]:
+                        if self._maze[dy][dx].walls & WallsType.W:
+                            count += 1
+                for dx in [x+0, x+1]:
+                    for dy in [y+0, y+1]:
+                        if self._maze[dy][dx].walls & WallsType.W:
+                            count += 1
+                if count == 0:
+                    return True
+                return False
+
+            for dx in [0, 1, 2]:
+                for dy in [0, 1, 2]:
+                    sx = x - dx
+                    sy = y - dy
+                    if sx+2 < self.width and sy+2 < self.height and \
+                            sx > 0 and sy > 0:
+                        if _check_room(sx, sy):
+                            return True
             return False
 
         def _undo_wall(cell: tuple[int], side: WallsType):
@@ -238,7 +245,8 @@ class MazeGenerator(BaseModel):
                                 n_cell.tp is TypeCell.TEXT):
                             continue
                         _break_wall((x, y), dir)
-                        if cell.walls == 0:
+                        print(_check_emptiness(x, y))
+                        if _check_emptiness(x, y):
                             _undo_wall((x, y), dir)
 
 
@@ -248,9 +256,8 @@ def main():
                 [1, 1, 1, 0, 1, 1, 1],
                 [0, 0, 1, 0, 1, 0, 0],
                 [0, 0, 1, 0, 1, 1, 1]]
-    # r.seed('fdssfdf')
-    maze = MazeGenerator(width=50,
-                         height=100,
+    maze = MazeGenerator(width=20,
+                         height=20,
                          entry_x=0,
                          entry_y=0,
                          exit_x=2,
