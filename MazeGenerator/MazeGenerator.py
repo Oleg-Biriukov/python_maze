@@ -10,10 +10,10 @@ class TypeCell(Enum):
 
 
 class WallsType(IntFlag):
-    W = 0b0001
-    S = 0b0010
-    N = 0b1000
-    E = 0b0100
+    W = 0b1000
+    S = 0b0100
+    E = 0b0010
+    N = 0b0001
     CLOSE = 0b1111
 
 
