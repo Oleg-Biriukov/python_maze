@@ -178,26 +178,17 @@ class MazeGenerator(BaseModel):
 
         def _check_emptiness(x: int, y: int) -> bool:
             def _check_room(x: int, y: int) -> bool:
-                count = 0
-                for dy in [y+0, y+1]:
-                    for dx in [x+0, x+1]:
-                        if self._maze[dy][dx].walls & WallsType.E:
-                            count += 1
-                for dy in [y+0, y+1]:
-                    for dx in [x+0, x+1]:
-                        if self._maze[dy][dx].walls & WallsType.E:
-                            count += 1
-                for dx in [x+0, x+1]:
-                    for dy in [y+0, y+1]:
-                        if self._maze[dy][dx].walls & WallsType.W:
-                            count += 1
-                for dx in [x+0, x+1]:
-                    for dy in [y+0, y+1]:
-                        if self._maze[dy][dx].walls & WallsType.W:
-                            count += 1
-                if count == 0:
-                    return True
-                return False
+                for dy in [y+0, y+1, y+2]:
+                    for dx in [x+0, x+1, x+2]:
+                        if self._maze[dy][dx].walls & WallsType.E and \
+                                self._maze[dy][dx].walls & WallsType.W:
+                            return False
+                for dx in [x+0, x+1, x+2]:
+                    for dy in [y+0, y+1, y+2]:
+                        if self._maze[dy][dx].walls & WallsType.E and \
+                                self._maze[dy][dx].walls & WallsType.W:
+                            return False
+                return True
 
             for dx in [0, 1, 2]:
                 for dy in [0, 1, 2]:
@@ -213,8 +204,8 @@ class MazeGenerator(BaseModel):
             drct = _dirct(*cell)
             x, y = cell
             nx, ny = drct[side]
-            self._maze[y][x].walls |= side
-            self._maze[ny][nx].walls |= oposite[side]
+            self._maze[y][x].walls |= side & 0b1111
+            self._maze[ny][nx].walls |= oposite[side] & 0b1111
 
         stack.append((x, y))
         self._maze[y][x].visited = True
@@ -245,9 +236,12 @@ class MazeGenerator(BaseModel):
                                 n_cell.tp is TypeCell.TEXT):
                             continue
                         _break_wall((x, y), dir)
-                        print(_check_emptiness(x, y))
-                        if _check_emptiness(x, y):
-                            _undo_wall((x, y), dir)
+                        if x == 11 and y == 12:
+                            print(x, y)
+                            print(_check_emptiness(x, y))
+                        # if :
+                        #     _undo_wall((x, y), dir)
+                        break
 
 
 def main():
@@ -257,8 +251,8 @@ def main():
                 [0, 0, 1, 0, 1, 0, 0],
                 [0, 0, 1, 0, 1, 1, 1]]
     r.seed('ff')
-    maze = MazeGenerator(width=20,
-                         height=20,
+    maze = MazeGenerator(width=16,
+                         height=16,
                          entry_x=0,
                          entry_y=0,
                          exit_x=2,
