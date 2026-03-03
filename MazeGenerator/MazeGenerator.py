@@ -176,7 +176,7 @@ class MazeGenerator(BaseModel):
         if self.perfect is False:
             to_destoy_x = int((self.width * self.height) * 0.1 / self.height)
             if to_destoy_x == 0:
-                to_destoy_x = 1
+                to_destoy_x = 5
             for y in range(self.height):
                 for x in r.choices(list(range(self.width)), k=to_destoy_x):
                     for dir, cor in _dirct(x, y).items():
