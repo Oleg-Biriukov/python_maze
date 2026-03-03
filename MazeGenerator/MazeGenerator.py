@@ -113,26 +113,17 @@ class MazeGenerator(BaseModel):
 
         def _check_emptiness(x: int, y: int) -> bool:
             def _check_room(x: int, y: int) -> bool:
-                count = 0
-                for dy in [y+0, y+1]:
-                    for dx in [x+0, x+1]:
-                        if self._maze[dy][dx].walls & WallsType.E:
-                            count += 1
-                for dy in [y+0, y+1]:
-                    for dx in [x+0, x+1]:
-                        if self._maze[dy][dx].walls & WallsType.E:
-                            count += 1
-                for dx in [x+0, x+1]:
-                    for dy in [y+0, y+1]:
-                        if self._maze[dy][dx].walls & WallsType.W:
-                            count += 1
-                for dx in [x+0, x+1]:
-                    for dy in [y+0, y+1]:
-                        if self._maze[dy][dx].walls & WallsType.W:
-                            count += 1
-                if count == 0:
-                    return True
-                return False
+                for dy in [y+0, y+1, y+2]:
+                    if self._maze[dy][x].walls & WallsType.E:
+                        return False
+                    if self._maze[dy][x+1].walls & WallsType.E:
+                        return False
+                for dx in [x+0, x+1, x+2]:
+                    if self._maze[y][dx].walls & WallsType.W:
+                        return False
+                    if self._maze[y+1][dx].walls & WallsType.W:
+                        return False
+                return True
 
             for dx in [0, 1, 2]:
                 for dy in [0, 1, 2]:
@@ -182,3 +173,4 @@ class MazeGenerator(BaseModel):
                         _break_wall((x, y), dir)
                         if _check_emptiness(x, y):
                             _undo_wall((x, y), dir)
+                        break
