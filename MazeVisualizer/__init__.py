@@ -1,4 +1,5 @@
-from .umodels import *
-from .views import *
+from .umodels import Maze, FileManager
+from .views import PlainRenderer, PrettyRenderer, MazeApp
 
-from MazeGenerator import  text_png
+__all__ = ['PlainRenderer', 'PrettyRenderer', 'MazeApp',
+           'Maze', 'FileManager']
