@@ -126,9 +126,11 @@ class Pathfinder:
                             heapq.heappush(open_list, (neighbor.f, neighbor))
 
 
-
 class FileManager:
     FILENAME = "../output_maze.txt"
+    @classmethod
+    def modify_filename(cls, new_name):
+        cls.FILENAME = new_name
 
     @classmethod
     def save_initial_data(cls, seed: str, maze: Maze) -> None:
@@ -148,3 +150,68 @@ class FileManager:
     def delete(cls) -> None:
         if os.path.exists(cls.FILENAME):
             os.remove(cls.FILENAME)
+
+    @staticmethod
+    def extract_arg(filename: str) -> dict[str, any] | None:
+        def check_cord(cord: str) -> bool:
+            cord = cord.split(',')
+            l_cord = len(list(filter(lambda x: x.isnumeric(), cord)))
+            if l_cord == 2:
+                return True
+            else:
+                raise ValueError('Wrong type of var was provided')
+
+        arg = {
+            'WIDTH': None,
+            'HEIGHT': None,
+            'ENTRY': None,
+            'EXIT': None,
+            'OUTPUT_FILE': None,
+            'PERFECT': True}
+        try:
+            with open(filename, 'r') as conf:
+                for line in conf:
+                    line = line.strip()
+                    if line[0] != '#':
+                        arg_val = line.split('=')
+                        if arg_val[0] in arg.keys() and len(arg_val) == 2:
+                            if arg_val[0] == 'ENTRY':
+                                if check_cord(arg_val[1]):
+                                    cord = arg_val[1].split(',')
+                                    cord = map(lambda x: int(x), cord)
+                                    arg['ENTRY'] = tuple(cord)
+
+                            elif (arg_val[0] == 'WIDTH' or
+                                  arg_val[0] == 'HEIGHT'):
+                                if arg_val[1].isnumeric():
+                                    arg[arg_val[0]] = int(arg_val[1])
+                                else:
+                                    raise ValueError('Wrong type of var was\
+ provided')
+
+                            elif arg_val[0] == 'EXIT':
+                                if check_cord(arg_val[1]):
+                                    cord = arg_val[1].split(',')
+                                    cord = map(lambda x: int(x), cord)
+                                    arg['EXIT'] = tuple(cord)
+
+                            elif arg_val[0] == 'PERFECT':
+                                if arg_val[1] == 'False':
+                                    arg['PERFECT'] = False
+                                elif arg_val[1] == 'True':
+                                    arg['PERFECT'] = True
+                                else:
+                                    raise ValueError('wrong bool var')
+                            else:
+                                arg[arg_val[0]] = arg_val[1]
+                        else:
+                            raise ValueError('Wrong key was provided.')
+        except Exception as e:
+            print(f'{type(e).__name__}: {e}')
+            if type(e) is not FileNotFoundError:
+                print(f'''<format of {filename} file>
+KEY=VALUE
+KEY1=VALUE
+# comments provided, but it has to be in saparete line''')
+            return None
+        return arg
