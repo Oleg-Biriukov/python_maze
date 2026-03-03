@@ -5,11 +5,14 @@ import random as r
 
 
 class TypeCell(Enum):
+    '''TO define two types of walls, where first will be
+    ourt wall and second one it is '42' label'''
     WALL = 'WALL'
     TEXT = 'TEXT'
 
 
 class WallsType(IntFlag):
+    '''Binary representation of walls'''
     W = 0b1000
     S = 0b0100
     E = 0b0010
@@ -18,6 +21,7 @@ class WallsType(IntFlag):
 
 
 class Cell(BaseModel):
+    '''Cell object'''
     tp: TypeCell
     walls: WallsType = WallsType.CLOSE
     visited: bool = False
@@ -25,6 +29,8 @@ class Cell(BaseModel):
 
 
 class MazeGenerator(BaseModel):
+    '''The class aims to cocreate the maze via Backtracking algorithm
+    '''
     width: int = Field(ge=1, le=300)
     height: int = Field(ge=1, le=300)
     perfect: bool = True
@@ -32,7 +38,7 @@ class MazeGenerator(BaseModel):
     _maze: List[List] = PrivateAttr(default=[[]])
 
     @model_validator(mode='after')
-    def cannot_equel(self):
+    def cannot_equel(self) -> object:
         if self.text:
             w = len(self.text[0])
             h = len(self.text)
@@ -41,11 +47,14 @@ class MazeGenerator(BaseModel):
         return self
 
     def _out_range(self, x: int, y: int) -> bool:
+        '''Local func for checking that my algorithm goes
+        out from border or not'''
         if x > self.width-1 or x < 0 or y > self.height-1 or y < 0:
             return True
         return False
 
-    def _generate_matrix(self):
+    def _generate_matrix(self) -> None:
+        '''generating the matrix with Cell class in each row'''
         for y in range(0, self.height):
             self._maze.append([])
             for x in range(0, self.width):
@@ -61,7 +70,8 @@ class MazeGenerator(BaseModel):
                     if self.text[y][x] == 1:
                         self._maze[y+t_y][x+t_x].tp = TypeCell.TEXT
 
-    def __str__(self):
+    def __str__(self) -> str:
+        '''generate the seed for maze'''
         result = []
         for y in self._maze:
             for x in y:
@@ -71,7 +81,10 @@ class MazeGenerator(BaseModel):
                     result.append(hex(x.walls)[2:].upper())
         return ''.join(result)
 
-    def generate_maze(self):
+    def generate_maze(self) -> None:
+        '''Generate maze it self via backtracking via stack(without recursive)
+        It is more efficient way to create, because we have no restriction with
+        resolution for maze.(Recursive restriction)'''
         self._generate_matrix()
         x, y = 0, 0
         oposite = {
@@ -82,14 +95,16 @@ class MazeGenerator(BaseModel):
         }
         stack = []
 
-        def _dirct(x: int, y: int):
+        def _dirct(x: int, y: int) -> dict[WallsType, tuple[int]]:
+            '''Return the with cord for next pos'''
             return {
                 WallsType.N: (x, y-1),
                 WallsType.E: (x+1, y),
                 WallsType.S: (x, y+1),
                 WallsType.W: (x-1, y)}
 
-        def _neigh(x, y) -> dict[WallsType, int]:
+        def _neigh(x: int, y: int) -> dict[WallsType, int]:
+            '''checking all avaible spot arount cord'''
             neigh = {}
             drct = _dirct(x, y)
 
@@ -104,7 +119,8 @@ class MazeGenerator(BaseModel):
                     neigh[d] = c
             return neigh
 
-        def _break_wall(cell: tuple[int], side: WallsType):
+        def _break_wall(cell: tuple[int], side: WallsType) -> None:
+            '''break wall between two cells'''
             drct = _dirct(*cell)
             x, y = cell
             nx, ny = drct[side]
@@ -112,6 +128,7 @@ class MazeGenerator(BaseModel):
             self._maze[ny][nx].walls &= ~oposite[side] & 0b1111
 
         def _check_emptiness(x: int, y: int) -> bool:
+            '''checking empty 3x3 room'''
             def _check_room(x: int, y: int) -> bool:
                 for dy in [y+0, y+1, y+2]:
                     if self._maze[dy][x].walls & WallsType.E:
@@ -135,7 +152,8 @@ class MazeGenerator(BaseModel):
                             return True
             return False
 
-        def _undo_wall(cell: tuple[int], side: WallsType):
+        def _undo_wall(cell: tuple[int], side: WallsType) -> None:
+            '''create the walls between two cells'''
             drct = _dirct(*cell)
             x, y = cell
             nx, ny = drct[side]
