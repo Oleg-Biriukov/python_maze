@@ -18,22 +18,35 @@ def main() -> None:
         height = conf['HEIGHT']
         start_x, start_y = conf['ENTRY']
         end_x, end_y = conf['EXIT']
-        mazegen = MazeGenerator.MazeGenerator(width=width, height=height,
-                                              perfect=conf['PERFECT'],
-                                              text=text_png)
+        FileManager.modify_filename(conf['OUTPUT_FILE'])
 
-        mazegen.generate_maze()
-        maze_seed = str(mazegen)
-        print(maze_seed)
+        def create_maze() -> Maze:
 
-        maze = Maze(maze_seed, width, height, start_x, start_y, end_x, end_y)
+            mazegen = MazeGenerator.MazeGenerator(
+                width=width,
+                height=height,
+                perfect=conf['PERFECT'],
+                text=text_png
+            )
+
+            mazegen.generate_maze()
+            maze_seed = str(mazegen)
+            new_maze = Maze(
+                maze_seed,
+                width, height,
+                start_x, start_y,
+                end_x, end_y
+            )
+
+            FileManager.save_initial_data(maze_seed, new_maze)
+
+            return new_maze
+
+        maze = create_maze()
 
         renderer = PrettyRenderer() if args.pretty else PlainRenderer()
 
-        FileManager.modify_filename(conf['OUTPUT_FILE'])
-        FileManager.save_initial_data(maze_seed, maze)
-
-        app = MazeApp(maze, renderer)
+        app = MazeApp(maze, renderer, regenerate_func=create_maze)
 
         app.run()
 

@@ -17,12 +17,14 @@ COLORS = {
 
 
 class MazeRenderer(ABC):
+    """Abstract base class for maze renderers"""
     @abstractmethod
     def render(self, maze: Maze) -> None:
         pass
 
 
 class PlainRenderer(MazeRenderer):
+    """Renderer for simple ASCII maze representation"""
     def render(self, maze: Maze) -> None:
         for y in range(maze.height):
             top_line = ""
@@ -46,20 +48,23 @@ class PlainRenderer(MazeRenderer):
                     mid_line += "   "
 
             top_line += "+"
-            mid_line += "|" if maze.matrix[y][maze.width - 1].walls["right"] else " "
+            mid_line += "|" \
+                if maze.matrix[y][maze.width - 1].walls["right"] else " "
             print(top_line)
             print(mid_line)
 
         low_line = ""
         for x in range(maze.width):
             low_line += "+"
-            low_line += "---" if maze.matrix[maze.height - 1][x].walls["bottom"] else "   "
+            low_line += "---" \
+                if maze.matrix[maze.height - 1][x].walls["bottom"] else "   "
 
         low_line += "+"
         print(low_line)
 
 
 class PrettyRenderer(MazeRenderer):
+    """Renderer for colorful and pretty maze representation"""
     def __init__(self) -> None:
         self.color_palette = [
             COLORS["WHITE"], COLORS["RED"], COLORS["GREEN"],
@@ -69,28 +74,38 @@ class PrettyRenderer(MazeRenderer):
         self.color_index = 0
 
     def next_color(self) -> None:
-        self.color_index = (self.color_index + 1) % len(self.color_palette)
+        """Switch to the next color in the palette"""
+        self.color_index = (
+                (self.color_index + 1) % len(self.color_palette))
 
-    def _get_corner(self, matrix: list, y: int, x: int, width: int, height: int) -> str:
+    def _get_corner(self, matrix: list, y: int,
+                    x: int, width: int, height: int) -> str:
+        """Calculate the correct corner character for walls"""
         up = False
         down = False
         left = False
         right = False
 
         if y > 0:
-            up = matrix[y - 1][x].walls["left"] if x < width else matrix[y - 1][x - 1].walls["right"]
+            up = matrix[y - 1][x].walls["left"] \
+                if x < width else matrix[y - 1][x - 1].walls["right"]
         if y < height:
-            down = matrix[y][x].walls["left"] if x < width else matrix[y][x - 1].walls["right"]
+            down = matrix[y][x].walls["left"] \
+                if x < width else matrix[y][x - 1].walls["right"]
         if x > 0:
-            left = matrix[y][x - 1].walls["top"] if y < height else matrix[y - 1][x - 1].walls["bottom"]
+            left = matrix[y][x - 1].walls["top"] \
+                if y < height else matrix[y - 1][x - 1].walls["bottom"]
         if x < width:
-            right = matrix[y][x].walls["top"] if y < height else matrix[y - 1][x].walls["bottom"]
+            right = matrix[y][x].walls["top"] \
+                if y < height else matrix[y - 1][x].walls["bottom"]
 
-        index = (1 if up else 0) + (2 if down else 0) + (4 if right else 0) + (8 if left else 0)
+        index = ((1 if up else 0) + (2 if down else 0)
+                 + (4 if right else 0) + (8 if left else 0))
         chars = " ┃┃┃━┗┏┣━┛┓┫━┻┳╋"
         return chars[index]
 
     def render(self, maze: Maze) -> None:
+        """Print the pretty colored maze"""
         color = self.color_palette[self.color_index]
         matrix = maze.matrix
         w = maze.width
@@ -133,13 +148,17 @@ class PrettyRenderer(MazeRenderer):
 
 
 class MazeApp:
-    def __init__(self, maze: Maze, renderer: MazeRenderer) -> None:
+    """MAin application class to handle the interactive loop"""
+    def __init__(self, maze: Maze,
+                 renderer: MazeRenderer, regenerate_func=None) -> None:
         self.maze = maze
         self.renderer = renderer
         self.pathfinder = Pathfinder()
         self.first_launch = True
+        self.regenerate_func = regenerate_func
 
     def run(self) -> None:
+        """Run the main interactive terminal loop"""
         os.system("clear")
         self.renderer.render(self.maze)
 
@@ -150,6 +169,7 @@ class MazeApp:
                 "s/S - show the path\n"
                 "h/H - hide the path\n"
                 "q/Q - quit the program\n"
+                "r/R - Re-create with new seed\n"
                 "d/D - delete output file"
             )
             print(menu_text)
@@ -191,9 +211,12 @@ class MazeApp:
                 os.system("clear")
                 break
 
-            elif terminal_input == "rq":
+            elif terminal_input == "r":
+                if self.regenerate_func:
+                    self.maze = self.regenerate_func()
+
                 self.first_launch = True
-                pass
+                self._refresh_screen()
 
             elif terminal_input == "d":
                 FileManager.delete()
@@ -203,5 +226,6 @@ class MazeApp:
                 self._refresh_screen()
 
     def _refresh_screen(self) -> None:
+        """Clear the terminal and render the maze again"""
         os.system("clear")
         self.renderer.render(self.maze)
