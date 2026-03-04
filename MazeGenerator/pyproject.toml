@@ -3,11 +3,11 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "maze-generator"
+name = "mazegen"
 version = "0.1.0"
 description = "Backtracking maze generator with optional text embedding"
 authors = [
-    { name = "Enter you name", email = "your@email.com" },
+    { name = "obirukov", email = "pipipupu2@email.com" },
     { name = "vlprysia", email = "pipipupu@your_email.com" }
 ]
 readme = "README.md"
