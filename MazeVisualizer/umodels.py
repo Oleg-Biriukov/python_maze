@@ -1,6 +1,6 @@
 import heapq
 import os
-from typing import Any, List, Dict, Iterable
+from typing import Any, List
 
 
 class Cell:
@@ -175,7 +175,9 @@ class FileManager:
             os.remove(cls.FILENAME)
 
     @staticmethod
-    def extract_arg(filename: str) -> dict[str, Any] | None:
+    def extract_arg(filename: str) -> dict[str,
+                                           str | bool | tuple[int, ...] |
+                                           int | None] | None:
         """Parse the configuration file and extract arguments"""
         def check_cord(cord: list[Any]) -> bool:
             l_cord: int = len(list(filter(lambda x: x.isnumeric(), cord)))
@@ -184,13 +186,15 @@ class FileManager:
             else:
                 raise ValueError('Wrong type of var was provided')
 
-        cord: list[Any]
-        arg: Dict[str, str | bool | tuple[int, int] | int | None] = {
-            'WIDTH': None,
-            'HEIGHT': None,
-            'ENTRY': None,
-            'EXIT': None,
-            'OUTPUT_FILE': None,
+        cord: List[str]
+        c_cord: List[int]
+        arg: dict[str, str | bool | tuple[int, ...] | int | None]
+        arg = {
+            'WIDTH': 0,
+            'HEIGHT': 0,
+            'ENTRY': (0, 0),
+            'EXIT': (0, 0),
+            'OUTPUT_FILE': '',
             'PERFECT': True}
         try:
             with open(filename, 'r') as conf:
@@ -202,8 +206,8 @@ class FileManager:
                             if arg_val[0] == 'ENTRY':
                                 cord = arg_val[1].split(',')
                                 if check_cord(cord):
-                                    cord = List(map(lambda x: int(x), cord))
-                                    arg['ENTRY'] = tuple(cord)
+                                    c_cord = list(map(lambda x: int(x), cord))
+                                    arg['ENTRY'] = tuple(c_cord)
 
                             elif (arg_val[0] == 'WIDTH' or
                                   arg_val[0] == 'HEIGHT'):
@@ -216,8 +220,8 @@ class FileManager:
                             elif arg_val[0] == 'EXIT':
                                 cord = arg_val[1].split(',')
                                 if check_cord(cord):
-                                    cord = list(map(lambda x: int(x), cord))
-                                    arg['EXIT'] = tuple(cord)
+                                    c_cord = list(map(lambda x: int(x), cord))
+                                    arg['EXIT'] = tuple(c_cord)
 
                             elif arg_val[0] == 'PERFECT':
                                 if arg_val[1] == 'False':

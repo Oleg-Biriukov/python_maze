@@ -1,4 +1,4 @@
-#!/home/olegr/Desktop/python_maze/venv/bin/python
+#!/home/obirukov/Desktop/myprojects/python_maze/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys
