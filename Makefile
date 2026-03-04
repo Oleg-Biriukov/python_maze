@@ -5,8 +5,7 @@ PIP := $(NAME)/bin/pip
 VENV := $(NAME)/bin/activate
 
 $(VENV):
-	@ $(PYTHON) -m venv $(NAME)
-	@ source $(VENV)
+	@ python3 -m venv $(NAME)
 
 install: $(VENV)
 	@ $(PIP) install -r requirements.txt > /dev/null 2>&1
