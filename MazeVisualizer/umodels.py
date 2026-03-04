@@ -61,6 +61,10 @@ class Maze:
             row = [Cell(x, y, seed[y * self.width + x])
                    for x in range(self.width)]
             cells_list.append(row)
+        if cells_list[self.end_y][self.end_x].is_42:
+            raise ValueError("End cannot be on 42 Cells")
+        if cells_list[self.start_y][self.start_x].is_42:
+            raise ValueError("Start cannot be on 42 Cells")
         return cells_list
 
     def reset_paths(self) -> None:
@@ -83,6 +87,7 @@ class Pathfinder:
     def trace_path(end_cell: Cell) -> tuple:
         """Trace the path from end cell to start cell"""
         path = []
+        current: Cell | None
         direction_string = ""
         moves = {(0, -1): "N", (0, 1): "S", (1, 0): "E", (-1, 0): "W"}
         current = end_cell
@@ -101,12 +106,12 @@ class Pathfinder:
 
         return path_coords, direction_string
 
-    def solve(self, maze: Maze) -> any:
+    def solve(self, maze: Maze) -> Any:
         """Solve the maze using A* algorithm and yield steps"""
         directions = [("top", 0, -1), ("right", 1, 0),
                       ("bottom", 0, 1), ("left", -1, 0)]
         start_cell = maze.matrix[maze.start_y][maze.start_x]
-        open_list = []
+        open_list: List = []
         heapq.heappush(open_list, (start_cell.f, start_cell))
         closed_list = set()
 
@@ -144,7 +149,7 @@ class Pathfinder:
 
 class FileManager:
     """Class to handle file operations for the maze"""
-    FILENAME: str = "../output_maze.txt"
+    FILENAME: str = "output_maze.txt"
 
     @classmethod
     def modify_filename(cls, new_name: str) -> None:
@@ -200,6 +205,8 @@ class FileManager:
             with open(filename, 'r') as conf:
                 for line in conf:
                     line = line.strip()
+                    if not line:
+                        continue
                     if line[0] != '#':
                         arg_val = line.split('=')
                         if arg_val[0] in arg.keys() and len(arg_val) == 2:

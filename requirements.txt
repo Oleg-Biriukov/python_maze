@@ -1,3 +1,4 @@
 pydantic>=2.0
 mypy>=1.16
 flake8>=3.0
+build>=1.4

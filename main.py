@@ -26,12 +26,14 @@ def main() -> None:
         end_y: int = cast(int, exit[1])
         name: str = cast(str, conf['OUTPUT_FILE'])
         perfect: bool = cast(bool, conf['PERFECT'])
-        FileManager.modify_filename(name)
+        if name:
+            FileManager.modify_filename(name)
 
         def create_maze() -> Maze | None:
+            """Maze generation function"""
             try:
-                if (start_x > width or start_y > height
-                    or end_x > width or end_y > height
+                if (start_x >= width or start_y >= height
+                    or end_x >= width or end_y >= height
                         or conf['ENTRY'] == conf['EXIT']):
                     raise ValueError('The coordinates of exit or entry was \
 provided wrong')

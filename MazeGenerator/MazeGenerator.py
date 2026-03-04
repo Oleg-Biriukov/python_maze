@@ -5,14 +5,14 @@ import random as r
 
 
 class TypeCell(Enum):
-    '''TO define two types of walls, where first will be
-    ourt wall and second one it is '42' label'''
+    """TO define two types of walls, where first will be
+    ourt wall and second one it is '42' label"""
     WALL = 'WALL'
     TEXT = 'TEXT'
 
 
 class WallsType(IntFlag):
-    '''Binary representation of walls'''
+    """Binary representation of walls"""
     W = 0b1000
     S = 0b0100
     E = 0b0010
@@ -21,7 +21,7 @@ class WallsType(IntFlag):
 
 
 class Cell(BaseModel):
-    '''Cell object'''
+    """Cell object"""
     tp: TypeCell
     walls: WallsType = WallsType.CLOSE
     visited: bool = False
@@ -29,8 +29,8 @@ class Cell(BaseModel):
 
 
 class MazeGenerator(BaseModel):
-    '''The class aims to cocreate the maze via Backtracking algorithm
-    '''
+    """The class aims to cocreate the maze via Backtracking algorithm
+    """
     width: int = Field(ge=1, le=70)
     height: int = Field(ge=1, le=70)
     perfect: bool = True
@@ -47,14 +47,14 @@ class MazeGenerator(BaseModel):
         return self
 
     def _out_range(self, x: int, y: int) -> bool:
-        '''Local func for checking that my algorithm goes
-        out from border or not'''
+        """Local func for checking that my algorithm goes
+        out from border or not"""
         if x > self.width-1 or x < 0 or y > self.height-1 or y < 0:
             return True
         return False
 
     def _generate_matrix(self) -> None:
-        '''generating the matrix with Cell class in each row'''
+        """generating the matrix with Cell class in each row"""
         for y in range(0, self.height):
             self._maze.append([])
             for x in range(0, self.width):
@@ -71,7 +71,7 @@ class MazeGenerator(BaseModel):
                         self._maze[y+t_y][x+t_x].tp = TypeCell.TEXT
 
     def __str__(self) -> str:
-        '''generate the seed for maze'''
+        """generate the seed for maze"""
         result = []
         for y in self._maze:
             for x in y:
@@ -82,9 +82,9 @@ class MazeGenerator(BaseModel):
         return ''.join(result)
 
     def generate_maze(self) -> None:
-        '''Generate maze it self via backtracking via stack(without recursive)
+        """Generate maze it self via backtracking via stack(without recursive)
         It is more efficient way to create, because we have no restriction with
-        resolution for maze.(Recursive restriction)'''
+        resolution for maze.(Recursive restriction)"""
         self._generate_matrix()
         x, y = 0, 0
         oposite = {
@@ -96,7 +96,7 @@ class MazeGenerator(BaseModel):
         stack = []
 
         def _dirct(x: int, y: int) -> dict[WallsType, tuple[int, int]]:
-            '''Return the with cord for next pos'''
+            """Return the with cord for next pos"""
             return {
                 WallsType.N: (x, y-1),
                 WallsType.E: (x+1, y),
@@ -104,7 +104,7 @@ class MazeGenerator(BaseModel):
                 WallsType.W: (x-1, y)}
 
         def _neigh(x: int, y: int) -> dict[WallsType, tuple[int, int]]:
-            '''checking all avaible spot arount cord'''
+            """checking all avaible spot arount cord"""
             neigh: dict[WallsType, tuple[int, int]] = {}
             drct: dict[WallsType, tuple[int, int]] = _dirct(x, y)
 
@@ -120,7 +120,7 @@ class MazeGenerator(BaseModel):
             return neigh
 
         def _break_wall(cell: tuple[int, int], side: WallsType) -> None:
-            '''break wall between two cells'''
+            """break wall between two cells"""
             drct = _dirct(*cell)
             x, y = cell
             nx, ny = drct[side]
@@ -128,7 +128,7 @@ class MazeGenerator(BaseModel):
             self._maze[ny][nx].walls &= ~oposite[side] & 0b1111
 
         def _check_emptiness(x: int, y: int) -> bool:
-            '''checking empty 3x3 room'''
+            """checking empty 3x3 room"""
             def _check_room(x: int, y: int) -> bool:
                 for dy in [y+0, y+1, y+2]:
                     if self._maze[dy][x].walls & WallsType.E:
@@ -136,9 +136,9 @@ class MazeGenerator(BaseModel):
                     if self._maze[dy][x+1].walls & WallsType.E:
                         return False
                 for dx in [x+0, x+1, x+2]:
-                    if self._maze[y][dx].walls & WallsType.W:
+                    if self._maze[y][dx].walls & WallsType.S:
                         return False
-                    if self._maze[y+1][dx].walls & WallsType.W:
+                    if self._maze[y+1][dx].walls & WallsType.S:
                         return False
                 return True
 
@@ -153,7 +153,7 @@ class MazeGenerator(BaseModel):
             return False
 
         def _undo_wall(cell: tuple[int, int], side: WallsType) -> None:
-            '''create the walls between two cells'''
+            """create the walls between two cells"""
             drct = _dirct(*cell)
             x, y = cell
             nx, ny = drct[side]

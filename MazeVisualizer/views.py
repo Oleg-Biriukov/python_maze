@@ -1,6 +1,7 @@
 import os
 import time
 from abc import ABC, abstractmethod
+
 from .umodels import Maze, Pathfinder, FileManager
 
 COLORS = {
@@ -19,13 +20,13 @@ COLORS = {
 class MazeRenderer(ABC):
     """Abstract base class for maze renderers"""
     @abstractmethod
-    def render(self, maze: Maze) -> None:
+    def render(self, maze: Maze, is_solving: bool = False) -> None:
         pass
 
 
 class PlainRenderer(MazeRenderer):
     """Renderer for simple ASCII maze representation"""
-    def render(self, maze: Maze) -> None:
+    def render(self, maze: Maze, is_solving: bool = False) -> None:
         for y in range(maze.height):
             top_line = ""
             mid_line = ""
@@ -52,6 +53,8 @@ class PlainRenderer(MazeRenderer):
                 if maze.matrix[y][maze.width - 1].walls["right"] else " "
             print(top_line)
             print(mid_line)
+            if not is_solving:
+                time.sleep(0.05)
 
         low_line = ""
         for x in range(maze.width):
@@ -104,7 +107,7 @@ class PrettyRenderer(MazeRenderer):
         chars = " ┃┃┃━┗┏┣━┛┓┫━┻┳╋"
         return chars[index]
 
-    def render(self, maze: Maze) -> None:
+    def render(self, maze: Maze, is_solving: bool = False) -> None:
         """Print the pretty colored maze"""
         color = self.color_palette[self.color_index]
         matrix = maze.matrix
@@ -134,7 +137,8 @@ class PrettyRenderer(MazeRenderer):
 
             top_line += self._get_corner(matrix, y, w, w, h)
             mid_line += "┃" if matrix[y][w - 1].walls["right"] else " "
-
+            if not is_solving:
+                time.sleep(0.05)
             print(f"{color}{top_line}{COLORS['RESET']}")
             print(f"{color}{mid_line}{COLORS['RESET']}")
 
@@ -179,7 +183,7 @@ class MazeApp:
             if terminal_input == "c":
                 if isinstance(self.renderer, PrettyRenderer):
                     self.renderer.next_color()
-                self._refresh_screen()
+                self._refresh_screen(need_animation=False)
 
             elif terminal_input == "s":
                 self.maze.reset_paths()
@@ -196,7 +200,7 @@ class MazeApp:
                     for py, px in path:
                         self.maze.matrix[py][px].is_path = True
 
-                    self.renderer.render(self.maze)
+                    self.renderer.render(self.maze, is_solving=True)
                     time.sleep(0.1)
 
                 if self.first_launch:
@@ -223,9 +227,12 @@ class MazeApp:
                 self._refresh_screen()
 
             else:
-                self._refresh_screen()
+                self._refresh_screen(need_animation=False)
 
-    def _refresh_screen(self) -> None:
+    def _refresh_screen(self, need_animation: bool = True) -> None:
         """Clear the terminal and render the maze again"""
         os.system("clear")
-        self.renderer.render(self.maze)
+        if need_animation:
+            self.renderer.render(self.maze)
+        else:
+            self.renderer.render(self.maze, is_solving=True)
