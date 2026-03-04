@@ -2,6 +2,7 @@
 
 *This project has been created as part of the 42 curriculum by vlprysia, obirukov.*
 
+![image of the maze](./images/img.png)
 ## Description
 A-Maze-ing is a procedural maze generator written in Python that creates, displays, and solves mazes. The project parses a configuration file to generate a maze, ensures there is a valid path from the entry to the exit, and visualizes the result interactively in the terminal. As a bonus, this project includes animations during the maze generation and pathfinding phases.
 
@@ -15,6 +16,12 @@ You can use the provided `Makefile` to manage the project:
 - **Run the program:** `make run` or execute directly via `python3 a_maze_ing.py config.txt`
 - **Clean cache:** `make clean`
 - **Build the reusable package:** `make build` (creates the pip module `.whl` / `.tar.gz`)
+
+
+## Quick Start
+```bash
+make run
+```
 
 ## Configuration File Format
 The program relies on a plain text configuration file. 
