@@ -8,7 +8,7 @@ $(VENV):
 	@ python3 -m venv $(NAME)
 
 install: $(VENV)
-	@ $(PIP) install -r requirements.txt > /dev/null 2>&1
+	@ $(PYTHON) -m pip install -r requirements.txt > /dev/null 2>&1
 
 run: install
 	@ $(PYTHON) $(FILE) config.txt
@@ -17,8 +17,8 @@ run-pretty: install
 	@ $(PYTHON) $(FILE) --pretty config.txt
 
 clean:
-	rm -rf *cache*
-	rm -rf */*cache*
+	rm -rf *cache* .mypy*
+	rm -rf */*cache* */.mypy*
 
 lint: $(VENV)
 	@ $(PYTHON) -m mypy *.py || true
@@ -26,4 +26,4 @@ lint: $(VENV)
 
 lint-strict: $(VENV)
 	@ $(PYTHON) -m flake8 *.py Maze*/*.py || true
-	@ $(PYTHON) -mmypy *.py --strict || true
+	@ $(PYTHON) -m mypy *.py --strict || true

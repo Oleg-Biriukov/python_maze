@@ -1,5 +1,6 @@
 import heapq
 import os
+from typing import Any, List, Dict, Iterable
 
 
 class Cell:
@@ -143,10 +144,10 @@ class Pathfinder:
 
 class FileManager:
     """Class to handle file operations for the maze"""
-    FILENAME = "../output_maze.txt"
+    FILENAME: str = "../output_maze.txt"
 
     @classmethod
-    def modify_filename(cls, new_name):
+    def modify_filename(cls, new_name: str) -> None:
         """Change the target output filename"""
         cls.FILENAME = new_name
 
@@ -174,17 +175,17 @@ class FileManager:
             os.remove(cls.FILENAME)
 
     @staticmethod
-    def extract_arg(filename: str) -> dict[str, any] | None:
+    def extract_arg(filename: str) -> dict[str, Any] | None:
         """Parse the configuration file and extract arguments"""
-        def check_cord(cord: str) -> bool:
-            cord = cord.split(',')
-            l_cord = len(list(filter(lambda x: x.isnumeric(), cord)))
+        def check_cord(cord: list[Any]) -> bool:
+            l_cord: int = len(list(filter(lambda x: x.isnumeric(), cord)))
             if l_cord == 2:
                 return True
             else:
                 raise ValueError('Wrong type of var was provided')
 
-        arg = {
+        cord: list[Any]
+        arg: Dict[str, str | bool | tuple[int, int] | int | None] = {
             'WIDTH': None,
             'HEIGHT': None,
             'ENTRY': None,
@@ -199,9 +200,9 @@ class FileManager:
                         arg_val = line.split('=')
                         if arg_val[0] in arg.keys() and len(arg_val) == 2:
                             if arg_val[0] == 'ENTRY':
-                                if check_cord(arg_val[1]):
-                                    cord = arg_val[1].split(',')
-                                    cord = map(lambda x: int(x), cord)
+                                cord = arg_val[1].split(',')
+                                if check_cord(cord):
+                                    cord = List(map(lambda x: int(x), cord))
                                     arg['ENTRY'] = tuple(cord)
 
                             elif (arg_val[0] == 'WIDTH' or
@@ -213,9 +214,9 @@ class FileManager:
  provided')
 
                             elif arg_val[0] == 'EXIT':
-                                if check_cord(arg_val[1]):
-                                    cord = arg_val[1].split(',')
-                                    cord = map(lambda x: int(x), cord)
+                                cord = arg_val[1].split(',')
+                                if check_cord(cord):
+                                    cord = list(map(lambda x: int(x), cord))
                                     arg['EXIT'] = tuple(cord)
 
                             elif arg_val[0] == 'PERFECT':

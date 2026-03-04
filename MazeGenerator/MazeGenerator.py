@@ -31,14 +31,14 @@ class Cell(BaseModel):
 class MazeGenerator(BaseModel):
     '''The class aims to cocreate the maze via Backtracking algorithm
     '''
-    width: int = Field(ge=1, le=300)
-    height: int = Field(ge=1, le=300)
+    width: int = Field(ge=1, le=70)
+    height: int = Field(ge=1, le=70)
     perfect: bool = True
-    text: List[List[int]] = None
-    _maze: List[List] = PrivateAttr(default=[[]])
+    text: List[List[int]]
+    _maze: List[List[Cell]] = PrivateAttr(default=[[]])
 
     @model_validator(mode='after')
-    def cannot_equel(self) -> object:
+    def cannot_equel(self) -> 'MazeGenerator':
         if self.text:
             w = len(self.text[0])
             h = len(self.text)
@@ -95,7 +95,7 @@ class MazeGenerator(BaseModel):
         }
         stack = []
 
-        def _dirct(x: int, y: int) -> dict[WallsType, tuple[int]]:
+        def _dirct(x: int, y: int) -> dict[WallsType, tuple[int, int]]:
             '''Return the with cord for next pos'''
             return {
                 WallsType.N: (x, y-1),
@@ -103,10 +103,10 @@ class MazeGenerator(BaseModel):
                 WallsType.S: (x, y+1),
                 WallsType.W: (x-1, y)}
 
-        def _neigh(x: int, y: int) -> dict[WallsType, int]:
+        def _neigh(x: int, y: int) -> dict[WallsType, tuple[int, int]]:
             '''checking all avaible spot arount cord'''
-            neigh = {}
-            drct = _dirct(x, y)
+            neigh: dict[WallsType, tuple[int, int]] = {}
+            drct: dict[WallsType, tuple[int, int]] = _dirct(x, y)
 
             for d, c in drct.items():
                 x, y = c
@@ -119,7 +119,7 @@ class MazeGenerator(BaseModel):
                     neigh[d] = c
             return neigh
 
-        def _break_wall(cell: tuple[int], side: WallsType) -> None:
+        def _break_wall(cell: tuple[int, int], side: WallsType) -> None:
             '''break wall between two cells'''
             drct = _dirct(*cell)
             x, y = cell
@@ -152,7 +152,7 @@ class MazeGenerator(BaseModel):
                             return True
             return False
 
-        def _undo_wall(cell: tuple[int], side: WallsType) -> None:
+        def _undo_wall(cell: tuple[int, int], side: WallsType) -> None:
             '''create the walls between two cells'''
             drct = _dirct(*cell)
             x, y = cell
